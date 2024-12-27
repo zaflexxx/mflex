@@ -58,7 +58,7 @@ end
 -- Function to move the character to a position
 local function MoveToTarget(targetPosition)
     local path = PathfindingService:CreatePath({
-        AgentRadius = 1, -- Adjust to match your character's size
+        AgentRadius = 2, -- Adjust to match your character's size
         AgentHeight = 1, -- Adjust to match your character's height
         AgentCanJump = true,
         AgentJumpHeight = 7, -- Adjust to allow for obstacles
