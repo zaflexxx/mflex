@@ -1,0 +1,126 @@
+local PathfindingService = game:GetService("PathfindingService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local HRP = player.Character:WaitForChild("HumanoidRootPart")
+
+-- Adjustable food quantity for all foods
+local foodQuantity = 8 -- Adjust this number to change the quantity for all food items
+
+-- Food positions (change these if needed)
+local foods = {
+    Donut = Vector3.new(-1031, 54, -562),
+    Pancakes = Vector3.new(-1032, 53, -570),
+    Pie = Vector3.new(-1037, 53, -571),
+    Hamburger = Vector3.new(-1050, 52, -572),
+    Omelette = Vector3.new(-1050, 52, -572),
+    Chicken_Fries = Vector3.new(-1127, 52, -298),
+    Tokito_Sake = Vector3.new(-1127, 52, -298),
+    Ramen = Vector3.new(-1127, 52, -298),
+    Tofu_Beef_Soup = Vector3.new(-1127, 52, -298)
+}
+
+-- MOfoods list for checking
+local MOfoods = {
+    "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
+}
+
+-- Function to check if all foods have zero quantity
+local function AllFoodsZeroQuantity()
+    for _, foodName in ipairs(MOfoods) do
+        local quantity = HasRequiredQuantity(foodName)
+        if quantity > 0 then
+            return false
+        end
+    end
+    return true
+end
+
+-- Function to check if a food has enough quantity
+local function HasRequiredQuantity(foodName)
+    local quantity = 0
+    -- Check Backpack for food items
+    for _, item in pairs(player.Backpack:GetChildren()) do
+        if item.Name == foodName and item:FindFirstChild("Quantity") then
+            quantity = item.Quantity.Value
+            break
+        end
+    end
+
+    -- Check Character for equipped food items (if any)
+    if quantity == 0 then
+        for _, item in pairs(player.Character:GetChildren()) do
+            if item.Name == foodName and item:FindFirstChild("Quantity") then
+                quantity = item.Quantity.Value
+                break
+            end
+        end
+    end
+
+    return quantity
+end
+
+-- Function to move the character to a position
+local function MoveToTarget(targetPosition)
+    -- Create a path
+    local path = PathfindingService:CreatePath({
+        AgentRadius = 2, -- Adjust to match your character's size
+        AgentHeight = 5, -- Adjust to match your character's height
+        AgentCanJump = true,
+        AgentJumpHeight = 7, -- Adjust to allow for obstacles
+        AgentMaxSlope = 45 -- Adjust for climbable slopes
+    })
+
+    -- Compute the path to the target position
+    path:ComputeAsync(HRP.Position, targetPosition)
+
+    -- Check if the path is valid
+    if path.Status == Enum.PathStatus.Success then
+        -- Get the waypoints from the path
+        local waypoints = path:GetWaypoints()
+
+        -- Walk through the waypoints
+        for _, waypoint in ipairs(waypoints) do
+            player.Character.Humanoid:MoveTo(waypoint.Position)
+            player.Character.Humanoid.MoveToFinished:Wait()
+
+            -- If the waypoint requires jumping, make the humanoid jump
+            if waypoint.Action == Enum.PathWaypointAction.Jump then
+                player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+
+        print("Reached the target!")
+    else
+        warn("Pathfinding failed!")
+    end
+end
+
+-- Function to process the foods and check if any need to be gathered
+local function ProcessFoods()
+    while not AllFoodsZeroQuantity() do
+        for _, foodName in ipairs(MOfoods) do
+            local quantity = HasRequiredQuantity(foodName)
+            if quantity == 0 then  -- Only move to food if it has a quantity of 0
+                print("Moving to " .. foodName)
+                local targetPosition = foods[foodName]  -- Get position from foods list
+                MoveToTarget(targetPosition)
+                -- After walking to a food, update the quantity after collection
+                foodQuantity = foodQuantity + quantity
+                wait(1) -- Wait before checking again
+            end
+        end
+    end
+    print("All foods reached the required quantity, stopping.")
+end
+
+-- Main function to check if the bot should start walking
+local function Main()
+    if AllFoodsZeroQuantity() then
+        ProcessFoods() -- If all foods have zero quantity, start walking
+    else
+        print("Not all foods have zero quantity. Waiting for adjustments.")
+    end
+end
+
+-- Start the main process
+Main()
