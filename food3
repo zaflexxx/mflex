@@ -11,45 +11,6 @@ local targetQuantity = 8
 local foodDistances = {}
 local macroSpot = HRP.Position
 
--- Function to move the player to the target position with a precise check for obstacles
-local function MoveToTarget(position)
-    -- Create the path for the player to follow
-    local path = PathfindingService:CreatePath({
-        AgentRadius = 2, -- Adjust based on your character size
-        AgentHeight = 5,
-        AgentCanJump = true,
-        AgentJumpHeight = 7,
-        AgentMaxSlope = 45,
-    })
-    
-    -- Compute the path to the target
-    local success, errorMessage = pcall(function()
-        path:ComputeAsync(HRP.Position, position)
-    end)
-
-    if not success then
-        warn("Pathfinding error: " .. errorMessage)
-        return
-    end
-
-    -- Follow the path
-    path:MoveTo(player.Character)
-    
-    -- Wait until the character reaches the target, checking every 0.1 seconds
-    path.StatusChanged:Connect(function()
-        if path.Status == Enum.PathStatus.Complete then
-            print("Reached target at position: " .. tostring(position))  -- Print distance after reaching
-        elseif path.Status == Enum.PathStatus.ClosestNoPath then
-            warn("Pathfinding failed: No valid path to target.")
-        end
-    end)
-    
-    -- Wait for the path to be completed
-    repeat
-        wait(0.1)
-    until path.Status == Enum.PathStatus.Complete or path.Status == Enum.PathStatus.ClosestNoPath
-end
-
 -- Update food distances
 local function UpdateFoodDistances()
     foodDistances = {}
@@ -106,20 +67,54 @@ end
 while true do
     if AllFoodsAtTarget() then
         print("All foods at target quantity. Returning to macro spot...")
-        MoveToTarget(macroSpot)  -- Return to macro spot with exact position check
-        print("Returned to macro spot.")
+        local path = PathfindingService:CreatePath({
+            AgentRadius = 2,
+            AgentHeight = 5,
+            AgentCanJump = true,
+            AgentJumpHeight = 7,
+            AgentMaxSlope = 45,
+        })
+        
+        path:ComputeAsync(HRP.Position, macroSpot)
+        path:MoveTo(player.Character)  -- Move to the macro spot
+        path.StatusChanged:Connect(function()
+            if path.Status == Enum.PathStatus.Complete then
+                print("Returned to macro spot.")
+            end
+        end)
         break
     else
         UpdateFoodDistances()
         
         for _, foodData in ipairs(foodDistances) do
             local foodName = foodData.name
-            print("Pathfinding to: " .. foodName)
             local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
             
             if targetPart then
                 print("Moving to target position: " .. tostring(targetPart.Position))
-                MoveToTarget(targetPart.Position)  -- Move to the food spot directly with exact position check
+                local path = PathfindingService:CreatePath({
+                    AgentRadius = 2,
+                    AgentHeight = 5,
+                    AgentCanJump = true,
+                    AgentJumpHeight = 7,
+                    AgentMaxSlope = 45,
+                })
+
+                path:ComputeAsync(HRP.Position, targetPart.Position)
+                path:MoveTo(player.Character)  -- Move to the food spot
+
+                path.StatusChanged:Connect(function()
+                    if path.Status == Enum.PathStatus.Complete then
+                        print("Reached target position: " .. tostring(targetPart.Position))  -- Print once when reached
+                    elseif path.Status == Enum.PathStatus.ClosestNoPath then
+                        warn("Pathfinding failed: No valid path to target.")
+                    end
+                end)
+
+                -- Wait for the path to complete
+                repeat
+                    wait(0.1)
+                until path.Status == Enum.PathStatus.Complete or path.Status == Enum.PathStatus.ClosestNoPath
                 
                 -- After moving, check if the character really reached the position
                 local distanceToTarget = (player.Character.HumanoidRootPart.Position - targetPart.Position).Magnitude
