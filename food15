@@ -3,10 +3,10 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local HRP = player.Character:WaitForChild("HumanoidRootPart")
 
--- Adjustable food quantity for all foods
-local foodQuantity = 8 -- Adjust this number to change the quantity for all food items
+-- Set the default food quantity
+local foodQuantity = 8  -- Default to 8, but you can change it
 
--- Food positions (change these if needed)
+-- Food names and their target positions
 local foods = {
     Donut = Vector3.new(-1031, 54, -562),
     Pancakes = Vector3.new(-1032, 53, -570),
@@ -24,18 +24,7 @@ local MOfoods = {
     "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
 }
 
--- Function to check if all foods have zero quantity
-local function AllFoodsZeroQuantity()
-    for _, foodName in ipairs(MOfoods) do
-        local quantity = HasRequiredQuantity(foodName)
-        if quantity > 0 then
-            return false
-        end
-    end
-    return true
-end
-
--- Function to check if a food has enough quantity
+-- Function to check if a food has the required quantity
 local function HasRequiredQuantity(foodName)
     local quantity = 0
     -- Check Backpack for food items
@@ -56,12 +45,23 @@ local function HasRequiredQuantity(foodName)
         end
     end
 
-    return quantity
+    return quantity >= foodQuantity
+end
+
+-- Function to check if all foods are zero quantity
+local function AllFoodsZero()
+    local allZero = true
+    for _, foodName in ipairs(MOfoods) do
+        if HasRequiredQuantity(foodName) then
+            allZero = false
+            break
+        end
+    end
+    return allZero
 end
 
 -- Function to move the character to a position
 local function MoveToTarget(targetPosition)
-    -- Create a path
     local path = PathfindingService:CreatePath({
         AgentRadius = 2, -- Adjust to match your character's size
         AgentHeight = 5, -- Adjust to match your character's height
@@ -95,31 +95,39 @@ local function MoveToTarget(targetPosition)
     end
 end
 
--- Function to process the foods and check if any need to be gathered
+-- Function to process each food in MOfoods list
 local function ProcessFoods()
-    while not AllFoodsZeroQuantity() do
-        for _, foodName in ipairs(MOfoods) do
-            local quantity = HasRequiredQuantity(foodName)
-            if quantity == 0 then  -- Only move to food if it has a quantity of 0
-                print("Moving to " .. foodName)
-                local targetPosition = foods[foodName]  -- Get position from foods list
-                MoveToTarget(targetPosition)
-                -- After walking to a food, update the quantity after collection
-                foodQuantity = foodQuantity + quantity
-                wait(1) -- Wait before checking again
-            end
+    local lastPrintTime = tick()
+
+    -- Loop through each food in the sorted list of distances
+    for _, foodName in ipairs(MOfoods) do
+        print("Checking " .. foodName)
+
+        -- Only move to food if the player has not yet reached the required quantity
+        if not HasRequiredQuantity(foodName) then
+            print("Moving to " .. foodName)
+            MoveToTarget(foods[foodName])
+            wait(1) -- Wait for a short period to check quantity while walking
+        else
+            print(foodName .. " quantity is sufficient.")
         end
     end
-    print("All foods reached the required quantity, stopping.")
 end
 
--- Main function to check if the bot should start walking
+-- Main function to handle food gathering
 local function Main()
-    if AllFoodsZeroQuantity() then
-        ProcessFoods() -- If all foods have zero quantity, start walking
-    else
-        print("Not all foods have zero quantity. Waiting for adjustments.")
+    -- Check if all foods have quantity 0 (indicating the need to move)
+    while not AllFoodsZero() do
+        print("Waiting for food quantities to be zero...")
+        wait(1) -- Wait before checking again
     end
+
+    -- Once all foods are zero, start the process
+    print("All food quantities are zero. Starting to gather...")
+
+    ProcessFoods()
+
+    -- After gathering food, you can add logic to go back to the macro spot or another action.
 end
 
 -- Start the main process
