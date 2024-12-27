@@ -1,0 +1,148 @@
+local PathfindingService = game:GetService("PathfindingService")
+
+-- Get the player's character and humanoid
+local character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+if not humanoid or not rootPart then
+    warn("Character or HumanoidRootPart not found!")
+    return
+end
+
+-- MOfoods list for checking
+local MOfoods = {
+    "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
+}
+
+-- Food positions
+local foodPositions = {
+    Donut = Vector3.new(-1031, 54, -562),
+    Pancakes = Vector3.new(-1032, 53, -570),
+    Pie = Vector3.new(-1037, 53, -571),
+    Hamburger = Vector3.new(-1050, 52, -572),
+    Omelette = Vector3.new(-1050, 52, -572),
+    Chicken_Fries = Vector3.new(-1127, 52, -298),
+    Tokito_Sake = Vector3.new(-1127, 52, -298),
+    Ramen = Vector3.new(-1127, 52, -298),
+    Tofu_Beef_Soup = Vector3.new(-1127, 52, -298)
+}
+
+-- Function to check food quantity
+local function checkFoodQuantity(foodName)
+    local foodQuantity = 0
+    local backpack = game.Players.LocalPlayer.Backpack
+    local workspace = game.Workspace.Live.LocalPlayer
+
+    -- Check in backpack
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item.Name == foodName then
+            foodQuantity = item:FindFirstChild("Quantity") and item.Quantity.Value or 0
+        end
+    end
+
+    -- Check in workspace if equipped
+    if foodQuantity == 0 then
+        for _, item in ipairs(workspace:GetChildren()) do
+            if item.Name == foodName then
+                foodQuantity = 1 -- If it's equipped, assume 1
+            end
+        end
+    end
+
+    return foodQuantity
+end
+
+-- Function to move to the target position
+local function moveToPosition(target)
+    -- Create a path with radius and height set to 1
+    local path = PathfindingService:CreatePath({
+        AgentRadius = 1,  -- Set radius to 1
+        AgentHeight = 1,  -- Set height to 1
+        AgentCanJump = true,
+        AgentJumpHeight = 7,
+        AgentMaxSlope = 45
+    })
+
+    -- Compute the path to the target position
+    path:ComputeAsync(rootPart.Position, target)
+
+    -- Check if the path is valid
+    if path.Status == Enum.PathStatus.Success then
+        print("Pathfinding successful!")
+        -- Get the waypoints from the path
+        local waypoints = path:GetWaypoints()
+
+        -- Walk through the waypoints
+        for _, waypoint in ipairs(waypoints) do
+            humanoid:MoveTo(waypoint.Position)
+            humanoid.MoveToFinished:Wait()
+
+            -- If the waypoint requires jumping, make the humanoid jump
+            if waypoint.Action == Enum.PathWaypointAction.Jump then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+        print("Reached the target position!")
+    else
+        warn("Pathfinding failed!")
+    end
+end
+
+-- Function to process food quantities and start walking
+local function processFood()
+    -- Save the current waypoint (position) so we can return after the food is bought
+    local startingPosition = rootPart.Position
+
+    -- Check the quantity of all foods
+    local allFoods = {}
+    for _, food in ipairs(MOfoods) do
+        local quantity = checkFoodQuantity(food)
+        table.insert(allFoods, { food = food, quantity = quantity })
+        print(food .. " Quantity: " .. quantity)  -- Print the food quantities
+    end
+
+    -- Check if all food quantities are zero
+    local allZero = true
+    for _, foodData in ipairs(allFoods) do
+        if foodData.quantity > 0 then
+            allZero = false
+            break
+        end
+    end
+
+    -- If all food quantities are zero, proceed with buying more food
+    if allZero then
+        print("All food quantities are zero, moving to buy food...")
+
+        -- Define the nearest food position to go to
+        local nearestFood = nil
+        local closestDistance = math.huge
+
+        for _, foodData in ipairs(allFoods) do
+            if foodData.quantity == 0 then
+                local foodPosition = foodPositions[foodData.food]
+                local distance = (rootPart.Position - foodPosition).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    nearestFood = foodData.food
+                end
+            end
+        end
+
+        if nearestFood then
+            -- Move to the nearest food position
+            print("Moving to the nearest food: " .. nearestFood)
+            moveToPosition(foodPositions[nearestFood])
+        end
+
+        -- After food is bought, return to the starting position
+        print("Returning to the starting position...")
+        moveToPosition(startingPosition)
+    else
+        print("Food available, no need to walk.")
+    end
+end
+
+-- Execute the processFood function
+processFood()
