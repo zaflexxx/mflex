@@ -5602,8 +5602,7 @@ local function MO(name)
 
 						if JobBoard == "Convenience" then
 							game.Players.LocalPlayer.Character.Humanoid:MoveTo(Vector3.new(-370, 47, -582))
-							game.Players.LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
-						end
+					end
 						task.spawn(function()
 							createPath(JBget)
 						end)
@@ -5691,124 +5690,122 @@ local function MO(name)
 
 
 	risky:Toggle("Auto Walk to Food Spots", false, function(Value)
-		autoWalkToFoodSpots = Value
-		if autoWalkToFoodSpots then
-			coroutine.wrap(function()
-				local PathfindingService = game:GetService("PathfindingService")
-				local Players = game:GetService("Players")
-				local player = Players.LocalPlayer
-				local HRP = player.Character:WaitForChild("HumanoidRootPart")
+		-- Only execute the logic if the toggle is on (Value = true)
+		if Value then
+			-- List of food items
+			local foodList = {
+				"Donut", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
+				"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
+			}
 	
-				local MOfoods = {
-					"Donut", "Coffee", "Bagel", "EZ Taco", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
-					"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
-				}
-				local targetQuantity = 8
-				local foodDistances = {}
-				local macroSpot = HRP.Position
+			-- Pathfinding script setup
+			local PathfindingService = game:GetService("PathfindingService")
+			local Players = game:GetService("Players")
+			local player = Players.LocalPlayer
+			local macroSpot = workspace:FindFirstChild("MacroSpot") -- Replace with actual macro spot if needed
 	
-				-- Pathfinding function to move to a given position
-				local function PathfindTo(position)
-					local path = PathfindingService:CreatePath({
-						AgentRadius = 2,              -- The radius of the agent for pathfinding
-						AgentHeight = 5,              -- The height of the agent
-						AgentCanJump = true,          -- The agent can jump over obstacles
-						AgentJumpHeight = 12,         -- The jump height (you can adjust this as needed)
-						AgentMaxSlope = 45,           -- The maximum slope the agent can walk on
-						AgentCanClimb = false,        -- The agent will not climb over obstacles
-					})
-					path:ComputeAsync(HRP.Position, position)  -- Compute the path to the target position
-					path:MoveTo(player.Character.Humanoid)    -- Move the humanoid along the path
-	
-					-- Wait until the path is finished or interrupted
-					path:MoveToFinished:Wait()
+			-- Function to handle movement to the target food spot
+			local function MoveToTarget(targetPosition)
+				if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+					warn("Player character or HumanoidRootPart not found.")
+					return
 				end
 	
-				-- Update food distances
-				local function UpdateFoodDistances()
-					foodDistances = {}
-					for _, foodName in ipairs(MOfoods) do
-						for _, obj in pairs(workspace:GetDescendants()) do
-							if obj.Name:split(":")[1] == foodName and obj:FindFirstChild("ClickDetector") then
-								local targetPart = obj:FindFirstChild("Head") or obj:FindFirstChild("PrimaryPart") or obj:FindFirstChildWhichIsA("BasePart")
-								if targetPart then
-									local distance = (targetPart.Position - HRP.Position).Magnitude
-									table.insert(foodDistances, {name = foodName, object = obj, distance = distance})
-								end
-							end
-						end
+				-- Create path
+				local path = PathfindingService:CreatePath({
+					AgentRadius = 2,
+					AgentHeight = 5,
+					AgentCanJump = true,
+					AgentJumpHeight = 7,
+					AgentMaxSlope = 45,
+				})
+	
+				-- Compute the path to the target
+				local success, errorMessage = pcall(function()
+					path:ComputeAsync(player.Character.HumanoidRootPart.Position, targetPosition)
+				end)
+	
+				if not success then
+					warn("Failed to compute path: " .. errorMessage)
+					return
+				end
+	
+				-- Visualize and follow the path
+				local waypoints = path:GetWaypoints()
+	
+				-- Move to each waypoint
+				for _, waypoint in ipairs(waypoints) do
+					-- Move the character
+					player.Character.Humanoid:MoveTo(waypoint.Position)
+					player.Character.Humanoid.MoveToFinished:Wait()
+				end
+			end
+	
+			-- Function to check if the character is at the macro spot
+			local function AtMacroSpot()
+				return player.Character.HumanoidRootPart.Position == macroSpot.Position
+			end
+	
+			-- Running logic (stamina and movement)
+			local isRunning = false
+			local LowStam = 20  -- Example value, replace with actual low stamina threshold
+			local function HandleRunning()
+				local StamPercent = (player.Character.CurrentStamina.Value / player.Character.MaxStamina.Value) * 100
+	
+				if not isRunning and StamPercent >= 100 then
+					-- Start running if stamina is 100%
+					-- Insert your action to start running here
+					isRunning = true
+				elseif isRunning then
+					repeat
+						StamPercent = (player.Character.CurrentStamina.Value / player.Character.MaxStamina.Value) * 100
+						wait(0.5)  -- Wait for a short interval before checking again
+					until StamPercent <= LowStam
+					if StamPercent < 100 then
+						-- Stop running if stamina is below threshold or other conditions
+						-- Insert your action to stop running here
+						isRunning = false
 					end
-					table.sort(foodDistances, function(a, b)
-						return a.distance < b.distance
-					end)
 				end
+			end
 	
-				-- Check if the player has a certain quantity of food
-				local function CheckFoodQuantity(foodName)
-					local quantity = 0
-					for _, item in pairs(player.Backpack:GetChildren()) do
-						if item.Name == foodName and item:FindFirstChild("Quantity") then
-							quantity = item.Quantity.Value
-							break
-						end
-					end
-					return quantity
-				end
+			-- Main loop that will walk to food spots
+			local function WalkToFoodSpots()
+				-- Loop through food items in the list
+				for _, foodName in ipairs(foodList) do
+					local food = workspace:FindFirstChild(foodName)
+					if food then
+						-- Get food position
+						local foodPosition = food.Position
 	
-				-- Check if only one food type is left in the backpack
-				local function OnlyOneFoodLeft()
-					local foodCount = 0
-					for _, foodName in ipairs(MOfoods) do
-						if CheckFoodQuantity(foodName) > 0 then
-							foodCount = foodCount + 1
-						end
-					end
-					return foodCount == 1
-				end
+						-- Move to food spot
+						MoveToTarget(foodPosition)
 	
-				-- Check if all foods have reached the target quantity
-				local function AllFoodsAtTarget()
-					for _, foodName in ipairs(MOfoods) do
-						if CheckFoodQuantity(foodName) < targetQuantity then
-							return false
-						end
-					end
-					return true
-				end
+						-- Check if stamina is low and handle running
+						HandleRunning()
 	
-				-- Main loop to control auto walking
-				while autoWalkToFoodSpots do
-					if OnlyOneFoodLeft() then
-						webhook("AutoWalk Notifier", "Only one food type left. Walking to all food spots...")
-						UpdateFoodDistances()
-						for _, foodData in ipairs(foodDistances) do
-							local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("
-							if targetPart then
-								PathfindTo(targetPart.Position)  -- Find the path to the food spot
-								webhook("AutoWalk Notifier", "Reached " .. foodData.name .. " spot exactly. Please buy manually if needed.")
-								
-								-- Wait until the quantity of food is reached before continuing to the next spot
-								repeat
-									task.wait(1)
-									local quantity = CheckFoodQuantity(foodData.name)
-									webhook("AutoWalk Notifier", foodData.name .. " quantity: " .. quantity)
-								until quantity >= targetQuantity or AllFoodsAtTarget()
-							end
-						end
-						-- After completing the food collection, return to the macro spot
-						PathfindTo(macroSpot)
-						webhook("AutoWalk Notifier", "Returned to macro spot.")
+						-- Wait until the player is at the food before moving to next spot
+						-- You can add a timeout if you don't want it to be infinite
+						wait(2)
 					else
-						webhook("AutoWalk Notifier", "More than one food type available. Waiting...")
-						task.wait(30)
+						warn("Food spot '" .. foodName .. "' not found.")
 					end
 				end
 	
-			end)()
+				-- Once all food spots are visited, go back to the macro spot
+				if not AtMacroSpot() then
+					MoveToTarget(macroSpot.Position)
+				end
+			end
+	
+			-- Start the walk to food spots when the toggle is on
+			WalkToFoodSpots()
+		else
+			-- If the toggle is turned off, stop any actions or reset logic if needed
+			print("Auto Walk to Food Spots disabled.")
 		end
 	end)
-		
-
+	
 	risky:Label("-- if supply job stop randomly use Point mag below -- ")
 
 	risky:Slider("Point Magnitude Til Next", { def = PointRangeTilNext, max = 30, min = 0 }, function(Value)
