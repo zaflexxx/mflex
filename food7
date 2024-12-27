@@ -16,15 +16,18 @@ local macroSpot = HRP.Position
 local function UpdateFoodDistances()
     foodDistances = {}
     for _, foodName in ipairs(MOfoods) do
+        local foundFood = 0
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj.Name:split(":")[1] == foodName and obj:FindFirstChild("ClickDetector") then
                 local targetPart = obj:FindFirstChild("Head") or obj:FindFirstChild("PrimaryPart") or obj:FindFirstChildWhichIsA("BasePart")
                 if targetPart then
                     local distance = (targetPart.Position - HRP.Position).Magnitude
                     table.insert(foodDistances, {name = foodName, object = obj, distance = distance})
+                    foundFood = foundFood + 1
                 end
             end
         end
+        print("Found " .. foundFood .. " of " .. foodName .. " in the workspace.")
     end
     table.sort(foodDistances, function(a, b)
         return a.distance < b.distance
@@ -48,6 +51,7 @@ local function FoodTypesLeftToCollect()
     local foodTypesLeft = 0
     for _, foodName in ipairs(MOfoods) do
         local quantity = CheckFoodQuantity(foodName)
+        print(foodName .. " quantity in backpack: " .. quantity)
         if quantity < targetQuantity then
             foodTypesLeft = foodTypesLeft + 1
         end
