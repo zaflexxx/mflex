@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local HRP = player.Character:WaitForChild("HumanoidRootPart")
 
+-- List of food names and target quantity (change as needed)
 local MOfoods = {
     "Donut", "Coffee", "Bagel", "EZ Taco", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
     "Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
@@ -42,17 +43,6 @@ local function CheckFoodQuantity(foodName)
     return quantity
 end
 
--- Check if only one food type is left in the backpack
-local function OnlyOneFoodLeft()
-    local foodCount = 0
-    for _, foodName in ipairs(MOfoods) do
-        if CheckFoodQuantity(foodName) > 0 then
-            foodCount = foodCount + 1
-        end
-    end
-    return foodCount == 1
-end
-
 -- Check if all foods have reached the target quantity
 local function AllFoodsAtTarget()
     for _, foodName in ipairs(MOfoods) do
@@ -63,71 +53,66 @@ local function AllFoodsAtTarget()
     return true
 end
 
+-- Function to compute path and move to target
+local function MoveToTarget(targetPosition)
+    local path = PathfindingService:CreatePath({
+        AgentRadius = 2, -- Adjust based on your character size
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentJumpHeight = 7,
+        AgentMaxSlope = 45,
+    })
+
+    -- Compute the path to the target
+    local success, errorMessage = pcall(function()
+        path:ComputeAsync(HRP.Position, targetPosition)
+    end)
+
+    if not success then
+        warn("Failed to compute path: " .. errorMessage)
+        return
+    end
+
+    -- Follow the path
+    for _, waypoint in ipairs(path:GetWaypoints()) do
+        -- Move the character
+        player.Character.Humanoid:MoveTo(waypoint.Position)
+        player.Character.Humanoid.MoveToFinished:Wait()
+    end
+end
+
 -- Main loop to walk to food and check quantities
 while true do
     if AllFoodsAtTarget() then
         print("All foods at target quantity. Returning to macro spot...")
-        local path = PathfindingService:CreatePath({
-            AgentRadius = 2,
-            AgentHeight = 5,
-            AgentCanJump = true,
-            AgentJumpHeight = 7,
-            AgentMaxSlope = 45,
-        })
-        
-        path:ComputeAsync(HRP.Position, macroSpot)
-        path:MoveTo(player.Character)  -- Move to the macro spot
-        path.StatusChanged:Connect(function()
-            if path.Status == Enum.PathStatus.Complete then
-                print("Returned to macro spot.")
-            end
-        end)
+
+        -- Create a path to return to the macro spot
+        MoveToTarget(macroSpot)
+        print("Returned to macro spot.")
         break
     else
         UpdateFoodDistances()
-        
+
         for _, foodData in ipairs(foodDistances) do
             local foodName = foodData.name
             local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
-            
+
             if targetPart then
                 print("Moving to target position: " .. tostring(targetPart.Position))
-                local path = PathfindingService:CreatePath({
-                    AgentRadius = 2,
-                    AgentHeight = 5,
-                    AgentCanJump = true,
-                    AgentJumpHeight = 7,
-                    AgentMaxSlope = 45,
-                })
 
-                path:ComputeAsync(HRP.Position, targetPart.Position)
-                path:MoveTo(player.Character)  -- Move to the food spot
+                -- Move to food target
+                MoveToTarget(targetPart.Position)
 
-                path.StatusChanged:Connect(function()
-                    if path.Status == Enum.PathStatus.Complete then
-                        print("Reached target position: " .. tostring(targetPart.Position))  -- Print once when reached
-                    elseif path.Status == Enum.PathStatus.ClosestNoPath then
-                        warn("Pathfinding failed: No valid path to target.")
-                    end
-                end)
+                -- Wait for the food to reach the target quantity
+                local quantity = CheckFoodQuantity(foodName)
+                print(foodName .. " quantity: " .. quantity)
 
-                -- Wait for the path to complete
-                repeat
-                    wait(0.1)
-                until path.Status == Enum.PathStatus.Complete or path.Status == Enum.PathStatus.ClosestNoPath
-                
-                -- After moving, check if the character really reached the position
-                local distanceToTarget = (player.Character.HumanoidRootPart.Position - targetPart.Position).Magnitude
-                print("Distance to target after moving: " .. distanceToTarget)
-                
-                print("Waiting for food quantity to reach target...")
-                
                 repeat
                     wait(1)
-                    local quantity = CheckFoodQuantity(foodName)
+                    quantity = CheckFoodQuantity(foodName)
                     print(foodName .. " quantity: " .. quantity)
                 until quantity >= targetQuantity
-                
+
                 print(foodName .. " has reached the target quantity.")
             else
                 print("Could not find target part for food: " .. foodName)
