@@ -77,14 +77,14 @@ local function MoveToTarget(targetPosition)
     path:ComputeAsync(HRP.Position, targetPosition)
 
     -- Check if the path is valid
-    if path.Status == Enum.PathStatus.Complete then
+    if path.Status == Enum.PathStatus.Success then
         -- Get the waypoints from the path
         local waypoints = path:GetWaypoints()
 
         -- Walk through the waypoints
         for _, waypoint in ipairs(waypoints) do
             player.Character.Humanoid:MoveTo(waypoint.Position)
-            player.Character.Humanoid.MoveToFinished:Wait()
+            player.Character.Humanoid.MoveToFinished:Wait()  -- Wait for movement to finish at each waypoint
 
             -- If the waypoint requires jumping, make the humanoid jump
             if waypoint.Action == Enum.PathWaypointAction.Jump then
