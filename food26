@@ -53,8 +53,8 @@ local function moveToPosition(targetPosition)
 
     -- Create a path
     local path = PathfindingService:CreatePath({
-        AgentRadius = 1, -- Adjust to match your character's size
-        AgentHeight = 1, -- Adjust to match your character's height
+        AgentRadius = 2, -- Adjust to match your character's size
+        AgentHeight = 5, -- Adjust to match your character's height
         AgentCanJump = true,
         AgentJumpHeight = 7, -- Adjust to allow for obstacles
         AgentMaxSlope = 45 -- Adjust for climbable slopes
