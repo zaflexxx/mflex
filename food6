@@ -47,7 +47,8 @@ end
 local function FoodTypesLeftToCollect()
     local foodTypesLeft = 0
     for _, foodName in ipairs(MOfoods) do
-        if CheckFoodQuantity(foodName) < targetQuantity then
+        local quantity = CheckFoodQuantity(foodName)
+        if quantity < targetQuantity then
             foodTypesLeft = foodTypesLeft + 1
         end
     end
