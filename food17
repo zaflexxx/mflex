@@ -27,6 +27,7 @@ local MOfoods = {
 -- Function to check if a food has the required quantity
 local function HasRequiredQuantity(foodName)
     local quantity = 0
+    
     -- Check Backpack for food items
     for _, item in pairs(player.Backpack:GetChildren()) do
         if item.Name == foodName and item:FindFirstChild("Quantity") then
@@ -35,29 +36,24 @@ local function HasRequiredQuantity(foodName)
         end
     end
 
-    -- Check Character for equipped food items (if any)
+    -- Check Character for equipped food items (in workspace.live.localplayer)
     if quantity == 0 then
-        for _, item in pairs(player.Character:GetChildren()) do
-            if item.Name == foodName and item:FindFirstChild("Quantity") then
-                quantity = item.Quantity.Value
-                break
-            end
+        local equippedFood = workspace:FindFirstChild("live") and workspace.live:FindFirstChild("localplayer") and workspace.live.localplayer:FindFirstChild(foodName)
+        if equippedFood and equippedFood:FindFirstChild("Quantity") then
+            quantity = equippedFood.Quantity.Value
         end
     end
 
-    return quantity >= foodQuantity
+    return quantity
 end
 
--- Function to check if all foods are zero quantity
-local function AllFoodsZero()
-    local allZero = true
+-- Function to print food quantities
+local function PrintFoodQuantities()
+    print("Food Quantities:")
     for _, foodName in ipairs(MOfoods) do
-        if HasRequiredQuantity(foodName) then
-            allZero = false
-            break
-        end
+        local quantity = HasRequiredQuantity(foodName)
+        print(foodName .. ": " .. quantity)
     end
-    return allZero
 end
 
 -- Function to move the character to a position
@@ -99,32 +95,23 @@ end
 local function ProcessFoods()
     local lastPrintTime = tick()
 
-    -- Loop through each food in the sorted list of distances
+    -- Loop through each food in the list and check if it needs to be bought
     for _, foodName in ipairs(MOfoods) do
-        print("Checking " .. foodName)
-
-        -- Only move to food if the player has not yet reached the required quantity
-        if not HasRequiredQuantity(foodName) then
-            print("Moving to " .. foodName)
-            MoveToTarget(foods[foodName])
+        while HasRequiredQuantity(foodName) < foodQuantity do
+            print(foodName .. " quantity is low. Moving to " .. foodName)
+            MoveToTarget(foods[foodName])  -- Move to food position
             wait(1) -- Wait for a short period to check quantity while walking
-        else
-            print(foodName .. " quantity is sufficient.")
+            PrintFoodQuantities()  -- Print quantities to track progress
         end
     end
 end
 
 -- Main function to handle food gathering
 local function Main()
-    -- Check if all foods have quantity 0 (indicating the need to move)
-    while not AllFoodsZero() do
-        print("Waiting for food quantities to be zero...")
-        wait(1) -- Wait before checking again
-    end
+    -- First, print all food quantities before starting
+    PrintFoodQuantities()
 
-    -- Once all foods are zero, start the process
-    print("All food quantities are zero. Starting to gather...")
-
+    -- Loop through and check each food
     ProcessFoods()
 
     -- After gathering food, you can add logic to go back to the macro spot or another action.
