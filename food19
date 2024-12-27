@@ -24,8 +24,8 @@ local MOfoods = {
     "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
 }
 
--- Function to check if a food has the required quantity
-local function HasRequiredQuantity(foodName)
+-- Function to check if a food has the required quantity in either the backpack or workspace
+local function GetFoodQuantity(foodName)
     local quantity = 0
     
     -- Check Backpack for food items
@@ -36,12 +36,10 @@ local function HasRequiredQuantity(foodName)
         end
     end
 
-    -- Check Character for equipped food items (in workspace.live.localplayer)
-    if quantity == 0 then
-        local equippedFood = workspace:FindFirstChild("live") and workspace.live:FindFirstChild("localplayer") and workspace.live.localplayer:FindFirstChild(foodName)
-        if equippedFood and equippedFood:FindFirstChild("Quantity") then
-            quantity = equippedFood.Quantity.Value
-        end
+    -- Check Workspace for equipped food items
+    local equippedFood = workspace:FindFirstChild("live") and workspace.live:FindFirstChild("localplayer") and workspace.live.localplayer:FindFirstChild(foodName)
+    if equippedFood and equippedFood:FindFirstChild("Quantity") then
+        quantity = equippedFood.Quantity.Value
     end
 
     return quantity
@@ -51,7 +49,7 @@ end
 local function PrintFoodQuantities()
     print("Food Quantities:")
     for _, foodName in ipairs(MOfoods) do
-        local quantity = HasRequiredQuantity(foodName)
+        local quantity = GetFoodQuantity(foodName)
         print(foodName .. ": " .. quantity)
     end
 end
@@ -94,7 +92,7 @@ end
 -- Function to check if all foods are out of stock (quantity = 0)
 local function AllFoodsZero()
     for _, foodName in ipairs(MOfoods) do
-        if HasRequiredQuantity(foodName) > 0 then
+        if GetFoodQuantity(foodName) > 0 then
             return false -- If any food has quantity > 0, return false
         end
     end
@@ -113,7 +111,7 @@ local function ProcessFoods()
 
     -- Loop through each food in the list and check if it needs to be bought
     for _, foodName in ipairs(MOfoods) do
-        while HasRequiredQuantity(foodName) < foodQuantity do
+        while GetFoodQuantity(foodName) < foodQuantity do
             print(foodName .. " quantity is low. Moving to " .. foodName)
             MoveToTarget(foods[foodName])  -- Move to food position
             wait(1) -- Wait for a short period to check quantity while walking
