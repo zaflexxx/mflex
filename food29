@@ -64,7 +64,7 @@ local function moveToPosition(targetPosition)
     path:ComputeAsync(rootPart.Position, targetPosition)
 
     -- Check if the path is valid
-    if path.Status == Enum.PathStatus.Complete then
+    if path.Status == Enum.PathStatus.Success then
         -- Get the waypoints from the path
         local waypoints = path:GetWaypoints()
 
