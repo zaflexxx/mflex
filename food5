@@ -43,7 +43,18 @@ local function CheckFoodQuantity(foodName)
     return quantity
 end
 
--- Check if all foods have reached the target quantity
+-- Function to check how many food types are left under target quantity
+local function FoodTypesLeftToCollect()
+    local foodTypesLeft = 0
+    for _, foodName in ipairs(MOfoods) do
+        if CheckFoodQuantity(foodName) < targetQuantity then
+            foodTypesLeft = foodTypesLeft + 1
+        end
+    end
+    return foodTypesLeft
+end
+
+-- Function to check if all foods have reached the target quantity
 local function AllFoodsAtTarget()
     for _, foodName in ipairs(MOfoods) do
         if CheckFoodQuantity(foodName) < targetQuantity then
@@ -83,41 +94,50 @@ end
 
 -- Main loop to walk to food and check quantities
 while true do
-    if AllFoodsAtTarget() then
-        print("All foods at target quantity. Returning to macro spot...")
+    -- Only start if there is exactly 1 food type left to collect
+    if FoodTypesLeftToCollect() == 1 then
+        print("One food type left. Starting collection process.")
 
-        -- Create a path to return to the macro spot
-        MoveToTarget(macroSpot)
-        print("Returned to macro spot.")
-        break
-    else
-        UpdateFoodDistances()
+        -- Proceed to collect food until all food types meet the target quantity
+        if AllFoodsAtTarget() then
+            print("All foods at target quantity. Returning to macro spot...")
 
-        for _, foodData in ipairs(foodDistances) do
-            local foodName = foodData.name
-            local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
+            -- Create a path to return to the macro spot
+            MoveToTarget(macroSpot)
+            print("Returned to macro spot.")
+            break
+        else
+            UpdateFoodDistances()
 
-            if targetPart then
-                print("Moving to target position: " .. tostring(targetPart.Position))
+            for _, foodData in ipairs(foodDistances) do
+                local foodName = foodData.name
+                local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
 
-                -- Move to food target
-                MoveToTarget(targetPart.Position)
+                if targetPart then
+                    print("Moving to target position: " .. tostring(targetPart.Position))
 
-                -- Wait for the food to reach the target quantity
-                local quantity = CheckFoodQuantity(foodName)
-                print(foodName .. " quantity: " .. quantity)
+                    -- Move to food target
+                    MoveToTarget(targetPart.Position)
 
-                repeat
-                    wait(1)
-                    quantity = CheckFoodQuantity(foodName)
+                    -- Wait for the food to reach the target quantity
+                    local quantity = CheckFoodQuantity(foodName)
                     print(foodName .. " quantity: " .. quantity)
-                until quantity >= targetQuantity
 
-                print(foodName .. " has reached the target quantity.")
-            else
-                print("Could not find target part for food: " .. foodName)
+                    repeat
+                        wait(1)
+                        quantity = CheckFoodQuantity(foodName)
+                        print(foodName .. " quantity: " .. quantity)
+                    until quantity >= targetQuantity
+
+                    print(foodName .. " has reached the target quantity.")
+                else
+                    print("Could not find target part for food: " .. foodName)
+                end
             end
         end
+    else
+        print("Player has more than 1 food type left, not starting the collection.")
     end
+
     wait(5)  -- Small delay before checking the next food item
 end
