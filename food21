@@ -6,7 +6,7 @@ local HRP = player.Character:WaitForChild("HumanoidRootPart")
 -- Set the default food quantity
 local foodQuantity = 8  -- Default to 8, but you can change it
 
--- Food names and their target positions
+-- Food names and their target positions (with underscores for consistency in code)
 local foods = {
     Donut = Vector3.new(-1031, 54, -562),
     Pancakes = Vector3.new(-1032, 53, -570),
@@ -19,7 +19,7 @@ local foods = {
     Tofu_Beef_Soup = Vector3.new(-1127, 52, -298)
 }
 
--- MOfoods list for checking
+-- MOfoods list for checking (using spaces in the names)
 local MOfoods = {
     "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
 }
@@ -49,7 +49,8 @@ end
 local function PrintFoodQuantities()
     print("Food Quantities:")
     for _, foodName in ipairs(MOfoods) do
-        local quantity = GetFoodQuantity(foodName)
+        local foodNameUnderscore = foodName:gsub(" ", "_")  -- Convert to underscore format for checking in `foods`
+        local quantity = GetFoodQuantity(foodNameUnderscore)
         print(foodName .. ": " .. quantity)
     end
 end
@@ -92,7 +93,8 @@ end
 -- Function to check if all foods are out of stock (quantity = 0)
 local function AllFoodsZero()
     for _, foodName in ipairs(MOfoods) do
-        if GetFoodQuantity(foodName) > 0 then
+        local foodNameUnderscore = foodName:gsub(" ", "_")  -- Convert to underscore format for checking in `foods`
+        if GetFoodQuantity(foodNameUnderscore) > 0 then
             return false -- If any food has quantity > 0, return false
         end
     end
@@ -104,44 +106,26 @@ local function ProcessFoods()
     -- Loop through and check if all food quantities are zero before starting
     while not AllFoodsZero() do
         print("Waiting for all foods to be out of stock...")
-        wait(1) -- Wait 1 second before checking again
+        wait(1)
     end
 
-    -- Save the current position before walking
-    local startingPosition = HRP.Position
-    print("Starting position saved: " .. tostring(startingPosition))
-
-    -- Loop through each food in the list and check if it needs to be bought
-    for _, foodName in ipairs(MOfoods) do
-        while GetFoodQuantity(foodName) < foodQuantity do
-            -- If the food is equipped (in the workspace), skip walking to it
-            if not IsFoodEquipped(foodName) then
-                print(foodName .. " quantity is low. Moving to " .. foodName)
-                MoveToTarget(foods[foodName])  -- Move to food position
-                wait(1) -- Wait for a short period to check quantity while walking
-                PrintFoodQuantities()  -- Print quantities to track progress
-            else
-                print(foodName .. " is equipped, waiting for it to be unequipped...")
-                wait(1) -- Wait for the food to be unequipped before checking again
-            end
-        end
-    end
-
-    -- Once all foods are collected, return to the original position
-    print("All foods bought. Returning to starting position.")
-    MoveToTarget(startingPosition)
-end
-
--- Function to handle food gathering process
-local function Main()
-    -- First, print all food quantities before starting
+    -- Print the current quantities of all foods
     PrintFoodQuantities()
 
-    -- Process the foods and move as needed
-    ProcessFoods()
-
-    -- After gathering food, you can add logic to go back to the macro spot or another action.
+    -- Once all foods are out of stock, proceed to buy food
+    for _, foodName in ipairs(MOfoods) do
+        local foodNameUnderscore = foodName:gsub(" ", "_")  -- Convert to underscore format for checking in `foods`
+        
+        local quantity = GetFoodQuantity(foodNameUnderscore)
+        if quantity == 0 then
+            local targetPosition = foods[foodNameUnderscore]  -- Access the position using the underscored name
+            print("Going to buy " .. foodName .. " at position: " .. tostring(targetPosition))
+            MoveToTarget(targetPosition)
+        else
+            print(foodName .. " already has " .. quantity .. " in stock, no need to buy.")
+        end
+    end
 end
 
--- Start the main process
-Main()
+-- Start processing food
+ProcessFoods()
