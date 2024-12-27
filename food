@@ -1,3 +1,84 @@
+local PathfindingService = game:GetService("PathfindingService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local HRP = player.Character:WaitForChild("HumanoidRootPart")
+
+local MOfoods = {
+    "Donut", "Coffee", "Bagel", "EZ Taco", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
+    "Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
+}
+local targetQuantity = 8
+local foodDistances = {}
+local macroSpot = HRP.Position
+
+-- Function to move the player to the target position with a precision check
+local function MoveToTarget(position)
+    -- Move the character to the target position
+    player.Character.Humanoid:MoveTo(position)
+    
+    -- Wait until the character is very close to the target position
+    while (player.Character.HumanoidRootPart.Position - position).Magnitude > 1 do
+        local currentDistance = (player.Character.HumanoidRootPart.Position - position).Magnitude
+        print("Current distance to target: " .. currentDistance)  -- Print the distance during movement
+        wait(0.1)  -- Small wait to avoid hogging CPU resources
+    end
+    
+    -- Print once the target has been reached
+    print("Reached target at position: " .. tostring(position))
+end
+
+-- Update food distances
+local function UpdateFoodDistances()
+    foodDistances = {}
+    for _, foodName in ipairs(MOfoods) do
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name:split(":")[1] == foodName and obj:FindFirstChild("ClickDetector") then
+                local targetPart = obj:FindFirstChild("Head") or obj:FindFirstChild("PrimaryPart") or obj:FindFirstChildWhichIsA("BasePart")
+                if targetPart then
+                    local distance = (targetPart.Position - HRP.Position).Magnitude
+                    table.insert(foodDistances, {name = foodName, object = obj, distance = distance})
+                end
+            end
+        end
+    end
+    table.sort(foodDistances, function(a, b)
+        return a.distance < b.distance
+    end)
+end
+
+-- Check if the player has a certain quantity of food
+local function CheckFoodQuantity(foodName)
+    local quantity = 0
+    for _, item in pairs(player.Backpack:GetChildren()) do
+        if item.Name == foodName and item:FindFirstChild("Quantity") then
+            quantity = item.Quantity.Value
+            break
+        end
+    end
+    return quantity
+end
+
+-- Check if only one food type is left in the backpack
+local function OnlyOneFoodLeft()
+    local foodCount = 0
+    for _, foodName in ipairs(MOfoods) do
+        if CheckFoodQuantity(foodName) > 0 then
+            foodCount = foodCount + 1
+        end
+    end
+    return foodCount == 1
+end
+
+-- Check if all foods have reached the target quantity
+local function AllFoodsAtTarget()
+    for _, foodName in ipairs(MOfoods) do
+        if CheckFoodQuantity(foodName) < targetQuantity then
+            return false
+        end
+    end
+    return true
+end
+
 -- Main loop to walk to food and check quantities
 while true do
     if AllFoodsAtTarget() then
@@ -14,8 +95,14 @@ while true do
             local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
             
             if targetPart then
+                print("Moving to target position: " .. tostring(targetPart.Position))
                 MoveToTarget(targetPart.Position)  -- Move to the food spot directly with exact position check
-                print("Reached " .. foodName .. " spot. Waiting for quantity...")
+                
+                -- After moving, check if the character really reached the position
+                local distanceToTarget = (player.Character.HumanoidRootPart.Position - targetPart.Position).Magnitude
+                print("Distance to target after moving: " .. distanceToTarget)
+                
+                print("Waiting for food quantity to reach target...")
                 
                 repeat
                     wait(1)
@@ -24,6 +111,8 @@ while true do
                 until quantity >= targetQuantity
                 
                 print(foodName .. " has reached the target quantity.")
+            else
+                print("Could not find target part for food: " .. foodName)
             end
         end
     end
