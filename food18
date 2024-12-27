@@ -91,9 +91,25 @@ local function MoveToTarget(targetPosition)
     end
 end
 
+-- Function to check if all foods are out of stock (quantity = 0)
+local function AllFoodsZero()
+    for _, foodName in ipairs(MOfoods) do
+        if HasRequiredQuantity(foodName) > 0 then
+            return false -- If any food has quantity > 0, return false
+        end
+    end
+    return true -- All foods are out of stock
+end
+
 -- Function to process each food in MOfoods list
 local function ProcessFoods()
     local lastPrintTime = tick()
+
+    -- Loop through and check if all food quantities are zero before starting
+    while not AllFoodsZero() do
+        print("Waiting for all foods to be out of stock...")
+        wait(1) -- Wait 1 second before checking again
+    end
 
     -- Loop through each food in the list and check if it needs to be bought
     for _, foodName in ipairs(MOfoods) do
