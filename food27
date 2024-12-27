@@ -23,8 +23,8 @@ local function checkFoodQuantities()
         local foodQuantity = 0
         -- Check if the food is in the backpack
         local foodItem = game.Players.LocalPlayer.Backpack:FindFirstChild(foodName)
-        if foodItem then
-            foodQuantity = foodItem.Quantity -- Assuming Quantity is a property or method
+        if foodItem and foodItem:FindFirstChild("Quantity") then
+            foodQuantity = foodItem.Quantity.Value -- Access the Value property of Quantity
         end
         
         -- Check if the food is in workspace
@@ -98,8 +98,8 @@ local function main()
         local foodQuantity = 0
         local foodItem = game.Players.LocalPlayer.Backpack:FindFirstChild(foodName)
         
-        if foodItem then
-            foodQuantity = foodItem.Quantity
+        if foodItem and foodItem:FindFirstChild("Quantity") then
+            foodQuantity = foodItem.Quantity.Value
         end
         
         local workspaceItem = workspace:FindFirstChild("live") and workspace.live.localplayer:FindFirstChild(foodName)
