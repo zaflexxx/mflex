@@ -5693,135 +5693,134 @@ local function MO(name)
 	local player = Players.LocalPlayer
 	
 	-- Add slider for setting quantity to check before buying
+	local PathfindingService = game:GetService("PathfindingService")
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
+	local HRP = player.Character:WaitForChild("HumanoidRootPart")
+	
+	local MOfoods = {
+		"Donut", "Coffee", "Bagel", "EZ Taco", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
+		"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
+	}
+	
+	local foodDistances = {}
+	local macroSpot = HRP.Position
 	local quantityToCheck = 8 -- Default value, will be updated via the slider
+	local autoWalkEnabled = false
+	
+	-- Update food distances
+	local function UpdateFoodDistances()
+		foodDistances = {}
+		for _, foodName in ipairs(MOfoods) do
+			for _, obj in pairs(workspace:GetDescendants()) do
+				if obj.Name:split(":")[1] == foodName and obj:FindFirstChild("ClickDetector") then
+					local targetPart = obj:FindFirstChild("Head") or obj:FindFirstChild("PrimaryPart") or obj:FindFirstChildWhichIsA("BasePart")
+					if targetPart then
+						local distance = (targetPart.Position - HRP.Position).Magnitude
+						table.insert(foodDistances, {name = foodName, object = obj, distance = distance})
+					end
+				end
+			end
+		end
+		table.sort(foodDistances, function(a, b)
+			return a.distance < b.distance
+		end)
+	end
+	
+	-- Check if the player has a certain quantity of food
+	local function CheckFoodQuantity(foodName)
+		local quantity = 0
+		for _, item in pairs(player.Backpack:GetChildren()) do
+			if item.Name == foodName and item:FindFirstChild("Quantity") then
+				quantity = item.Quantity.Value
+				break
+			end
+		end
+		return quantity
+	end
+	
+	-- Check if all foods have reached the target quantity
+	local function AllFoodsAtTarget()
+		for _, foodName in ipairs(MOfoods) do
+			if CheckFoodQuantity(foodName) < quantityToCheck then
+				return false
+			end
+		end
+		return true
+	end
+	
+	-- Function to compute path and move to target
+	local function MoveToTarget(targetPosition)
+		local path = PathfindingService:CreatePath({
+			AgentRadius = 2,
+			AgentHeight = 5,
+			AgentCanJump = true,
+			AgentJumpHeight = 7,
+			AgentMaxSlope = 45,
+		})
+	
+		local success, errorMessage = pcall(function()
+			path:ComputeAsync(HRP.Position, targetPosition)
+		end)
+	
+		if not success then
+			warn("Failed to compute path: " .. errorMessage)
+			return
+		end
+	
+		for _, waypoint in ipairs(path:GetWaypoints()) do
+			player.Character.Humanoid:MoveTo(waypoint.Position)
+			player.Character.Humanoid.MoveToFinished:Wait()
+		end
+	end
+	
+	-- Main loop to walk to food and check quantities
+	local function AutoWalkToFoodSpots()
+		while autoWalkEnabled do
+			if AllFoodsAtTarget() then
+				print("All foods at target quantity. Returning to macro spot...")
+				MoveToTarget(macroSpot)
+				print("Returned to macro spot.")
+				break
+			else
+				UpdateFoodDistances()
+				for _, foodData in ipairs(foodDistances) do
+					local foodName = foodData.name
+					local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
+					if targetPart then
+						print("Moving to target position: " .. tostring(targetPart.Position))
+						MoveToTarget(targetPart.Position)
+						local quantity = CheckFoodQuantity(foodName)
+						print(foodName .. " quantity: " .. quantity)
+						repeat
+							wait(1)
+							quantity = CheckFoodQuantity(foodName)
+							print(foodName .. " quantity: " .. quantity)
+						until quantity >= quantityToCheck
+						print(foodName .. " has reached the target quantity.")
+					else
+						print("Could not find target part for food: " .. foodName)
+					end
+				end
+			end
+			wait(5)
+		end
+	end
+	
+	-- Slider for setting quantity to check before buying
 	risky:Slider("Food Quantity to Check Before Buying", { def = quantityToCheck, max = 12, min = 1 }, function(Value)
 		quantityToCheck = Value
 	end)
 	
-	-- Define function to run to food spots
-	local function AutoWalkToFoodSpots()
-		-- Ensure the player character and HumanoidRootPart exist
-		if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-			warn("Player character or HumanoidRootPart not found.")
-			return
-		end
-	
-		-- Food list to check
-		local foodList = {
-			"Donut", "Omelette", "Pancakes", "Tofu Beef Soup",
-			"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
-		}
-	
-		-- Iterate over the food list
-		for _, foodName in ipairs(foodList) do
-			-- Get the target food object from the workspace
-			local target = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(foodName)
-			if not target then
-				warn("Target '" .. foodName .. "' not found.")
-				continue
-			end
-	
-			-- Determine the target position
-			local targetPosition
-			if target:IsA("BasePart") then
-				targetPosition = target.Position
-			elseif target:IsA("Model") then
-				if target:FindFirstChild("PrimaryPart") then
-					targetPosition = target.PrimaryPart.Position
-				else
-					local bounds = target:GetBoundingBox()
-					targetPosition = bounds.Position
-				end
-			else
-				warn("Target is not a valid BasePart or Model.")
-				continue
-			end
-	
-			-- Create a path to the target
-			local path = PathfindingService:CreatePath({
-				AgentRadius = 2,
-				AgentHeight = 5,
-				AgentCanJump = true,
-				AgentJumpHeight = 7,
-				AgentMaxSlope = 45,
-			})
-	
-			-- Compute the path to the target
-			local success, errorMessage = pcall(function()
-				path:ComputeAsync(player.Character.HumanoidRootPart.Position, targetPosition)
-			end)
-	
-			if not success then
-				warn("Failed to compute path: " .. errorMessage)
-				return
-			end
-	
-			-- Follow the waypoints
-			local waypoints = path:GetWaypoints()
-	
-			-- Move to each waypoint
-			for _, waypoint in ipairs(waypoints) do
-				-- Visualize waypoints (optional)
-				local part = Instance.new("Part")
-				part.Shape = Enum.PartType.Ball
-				part.Material = Enum.Material.Neon
-				part.Size = Vector3.new(0.5, 0.5, 0.5)
-				part.Position = waypoint.Position
-				part.Anchored = true
-				part.CanCollide = false
-				part.Parent = workspace
-	
-				-- Move the character
-				player.Character.Humanoid:MoveTo(waypoint.Position)
-				player.Character.Humanoid.MoveToFinished:Wait()
-	
-				-- Remove the visualization part after moving
-				part:Destroy()
-			end
-	
-			-- Check if the food quantity is sufficient
-			local foodQuantity = target:FindFirstChild("Quantity") and target.Quantity.Value or 0
-			if foodQuantity >= quantityToCheck then
-				print("Reached " .. foodName .. " with sufficient quantity (" .. foodQuantity .. " items).")
-				-- Proceed with buying food logic (e.g., calling buy function)
-			else
-				print("Food quantity for " .. foodName .. " is less than " .. quantityToCheck .. " (" .. foodQuantity .. " items).")
-			end
-	
-			-- If all food spots are done, stop running until stamina is full
-			if player.Character:FindFirstChild("Humanoid") then
-				local Humanoid = player.Character.Humanoid
-				local StamPercent = (Humanoid.Stamina.Value / Humanoid.MaxStamina.Value) * 100
-				local LowStam = 20
-	
-				if StamPercent >= 100 then
-					-- Proceed to running if stamina is full
-					Humanoid:MoveTo(targetPosition)
-				else
-					-- Wait for stamina regeneration
-					repeat
-						wait(1)
-						StamPercent = (Humanoid.Stamina.Value / Humanoid.MaxStamina.Value) * 100
-					until StamPercent >= 100
-				end
-			end
-	
-			-- Return to the original macro spot once all tasks are complete
-			print("Returning to macro spot after completing tasks.")
-			-- Insert logic to pathfind back to the macro spot here
-		end
-	end
-	
 	-- Toggle for Auto Walk to Food Spots
 	risky:Toggle("Auto Walk to Food Spots", false, function(Value)
+		autoWalkEnabled = Value
 		if Value then
-			AutoWalkToFoodSpots()  -- Start the walking and food checking
+			AutoWalkToFoodSpots()
 		else
 			print("Auto Walk to Food Spots turned off.")
-			-- Logic to stop walking (if needed)
 		end
 	end)
-	
 	
 	risky:Label("-- if supply job stop randomly use Point mag below -- ")
 
