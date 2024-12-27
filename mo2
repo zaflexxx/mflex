@@ -5688,123 +5688,140 @@ local function MO(name)
 		end
 	end)
 
-
-	risky:Toggle("Auto Walk to Food Spots", false, function(Value)
-		-- Only execute the logic if the toggle is on (Value = true)
-		if Value then
-			-- List of food items
-			local foodList = {
-				"Donut", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
-				"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
-			}
+	local PathfindingService = game:GetService("PathfindingService")
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
 	
-			-- Pathfinding script setup
-			local PathfindingService = game:GetService("PathfindingService")
-			local Players = game:GetService("Players")
-			local player = Players.LocalPlayer
-			local macroSpot = workspace:FindFirstChild("MacroSpot") -- Replace with actual macro spot if needed
+	-- Add slider for setting quantity to check before buying
+	local quantityToCheck = 8 -- Default value, will be updated via the slider
+	risky:Slider("Food Quantity to Check Before Buying", { def = quantityToCheck, max = 12, min = 1 }, function(Value)
+		quantityToCheck = Value
+	end)
 	
-			-- Function to handle movement to the target food spot
-			local function MoveToTarget(targetPosition)
-				if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-					warn("Player character or HumanoidRootPart not found.")
-					return
-				end
+	-- Define function to run to food spots
+	local function AutoWalkToFoodSpots()
+		-- Ensure the player character and HumanoidRootPart exist
+		if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+			warn("Player character or HumanoidRootPart not found.")
+			return
+		end
 	
-				-- Create path
-				local path = PathfindingService:CreatePath({
-					AgentRadius = 2,
-					AgentHeight = 5,
-					AgentCanJump = true,
-					AgentJumpHeight = 7,
-					AgentMaxSlope = 45,
-				})
+		-- Food list to check
+		local foodList = {
+			"Donut", "Omelette", "Pancakes", "Tofu Beef Soup",
+			"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
+		}
 	
-				-- Compute the path to the target
-				local success, errorMessage = pcall(function()
-					path:ComputeAsync(player.Character.HumanoidRootPart.Position, targetPosition)
-				end)
-	
-				if not success then
-					warn("Failed to compute path: " .. errorMessage)
-					return
-				end
-	
-				-- Visualize and follow the path
-				local waypoints = path:GetWaypoints()
-	
-				-- Move to each waypoint
-				for _, waypoint in ipairs(waypoints) do
-					-- Move the character
-					player.Character.Humanoid:MoveTo(waypoint.Position)
-					player.Character.Humanoid.MoveToFinished:Wait()
-				end
+		-- Iterate over the food list
+		for _, foodName in ipairs(foodList) do
+			-- Get the target food object from the workspace
+			local target = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(foodName)
+			if not target then
+				warn("Target '" .. foodName .. "' not found.")
+				continue
 			end
 	
-			-- Function to check if the character is at the macro spot
-			local function AtMacroSpot()
-				return player.Character.HumanoidRootPart.Position == macroSpot.Position
+			-- Determine the target position
+			local targetPosition
+			if target:IsA("BasePart") then
+				targetPosition = target.Position
+			elseif target:IsA("Model") then
+				if target:FindFirstChild("PrimaryPart") then
+					targetPosition = target.PrimaryPart.Position
+				else
+					local bounds = target:GetBoundingBox()
+					targetPosition = bounds.Position
+				end
+			else
+				warn("Target is not a valid BasePart or Model.")
+				continue
 			end
 	
-			-- Running logic (stamina and movement)
-			local isRunning = false
-			local LowStam = 20  -- Example value, replace with actual low stamina threshold
-			local function HandleRunning()
-				local StamPercent = (player.Character.CurrentStamina.Value / player.Character.MaxStamina.Value) * 100
+			-- Create a path to the target
+			local path = PathfindingService:CreatePath({
+				AgentRadius = 2,
+				AgentHeight = 5,
+				AgentCanJump = true,
+				AgentJumpHeight = 7,
+				AgentMaxSlope = 45,
+			})
 	
-				if not isRunning and StamPercent >= 100 then
-					-- Start running if stamina is 100%
-					-- Insert your action to start running here
-					isRunning = true
-				elseif isRunning then
+			-- Compute the path to the target
+			local success, errorMessage = pcall(function()
+				path:ComputeAsync(player.Character.HumanoidRootPart.Position, targetPosition)
+			end)
+	
+			if not success then
+				warn("Failed to compute path: " .. errorMessage)
+				return
+			end
+	
+			-- Follow the waypoints
+			local waypoints = path:GetWaypoints()
+	
+			-- Move to each waypoint
+			for _, waypoint in ipairs(waypoints) do
+				-- Visualize waypoints (optional)
+				local part = Instance.new("Part")
+				part.Shape = Enum.PartType.Ball
+				part.Material = Enum.Material.Neon
+				part.Size = Vector3.new(0.5, 0.5, 0.5)
+				part.Position = waypoint.Position
+				part.Anchored = true
+				part.CanCollide = false
+				part.Parent = workspace
+	
+				-- Move the character
+				player.Character.Humanoid:MoveTo(waypoint.Position)
+				player.Character.Humanoid.MoveToFinished:Wait()
+	
+				-- Remove the visualization part after moving
+				part:Destroy()
+			end
+	
+			-- Check if the food quantity is sufficient
+			local foodQuantity = target:FindFirstChild("Quantity") and target.Quantity.Value or 0
+			if foodQuantity >= quantityToCheck then
+				print("Reached " .. foodName .. " with sufficient quantity (" .. foodQuantity .. " items).")
+				-- Proceed with buying food logic (e.g., calling buy function)
+			else
+				print("Food quantity for " .. foodName .. " is less than " .. quantityToCheck .. " (" .. foodQuantity .. " items).")
+			end
+	
+			-- If all food spots are done, stop running until stamina is full
+			if player.Character:FindFirstChild("Humanoid") then
+				local Humanoid = player.Character.Humanoid
+				local StamPercent = (Humanoid.Stamina.Value / Humanoid.MaxStamina.Value) * 100
+				local LowStam = 20
+	
+				if StamPercent >= 100 then
+					-- Proceed to running if stamina is full
+					Humanoid:MoveTo(targetPosition)
+				else
+					-- Wait for stamina regeneration
 					repeat
-						StamPercent = (player.Character.CurrentStamina.Value / player.Character.MaxStamina.Value) * 100
-						wait(0.5)  -- Wait for a short interval before checking again
-					until StamPercent <= LowStam
-					if StamPercent < 100 then
-						-- Stop running if stamina is below threshold or other conditions
-						-- Insert your action to stop running here
-						isRunning = false
-					end
+						wait(1)
+						StamPercent = (Humanoid.Stamina.Value / Humanoid.MaxStamina.Value) * 100
+					until StamPercent >= 100
 				end
 			end
 	
-			-- Main loop that will walk to food spots
-			local function WalkToFoodSpots()
-				-- Loop through food items in the list
-				for _, foodName in ipairs(foodList) do
-					local food = workspace:FindFirstChild(foodName)
-					if food then
-						-- Get food position
-						local foodPosition = food.Position
+			-- Return to the original macro spot once all tasks are complete
+			print("Returning to macro spot after completing tasks.")
+			-- Insert logic to pathfind back to the macro spot here
+		end
+	end
 	
-						-- Move to food spot
-						MoveToTarget(foodPosition)
-	
-						-- Check if stamina is low and handle running
-						HandleRunning()
-	
-						-- Wait until the player is at the food before moving to next spot
-						-- You can add a timeout if you don't want it to be infinite
-						wait(2)
-					else
-						warn("Food spot '" .. foodName .. "' not found.")
-					end
-				end
-	
-				-- Once all food spots are visited, go back to the macro spot
-				if not AtMacroSpot() then
-					MoveToTarget(macroSpot.Position)
-				end
-			end
-	
-			-- Start the walk to food spots when the toggle is on
-			WalkToFoodSpots()
+	-- Toggle for Auto Walk to Food Spots
+	risky:Toggle("Auto Walk to Food Spots", false, function(Value)
+		if Value then
+			AutoWalkToFoodSpots()  -- Start the walking and food checking
 		else
-			-- If the toggle is turned off, stop any actions or reset logic if needed
-			print("Auto Walk to Food Spots disabled.")
+			print("Auto Walk to Food Spots turned off.")
+			-- Logic to stop walking (if needed)
 		end
 	end)
+	
 	
 	risky:Label("-- if supply job stop randomly use Point mag below -- ")
 
