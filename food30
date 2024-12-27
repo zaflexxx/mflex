@@ -1,0 +1,131 @@
+local PathfindingService = game:GetService("PathfindingService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local HRP = player.Character:WaitForChild("HumanoidRootPart")
+
+-- Set the default food quantity
+local foodQuantity = 8  -- Default to 8, but you can change it
+
+-- Food names and their target positions (with underscores for consistency in code)
+local foods = {
+    Donut = Vector3.new(-1031, 54, -562),
+    Pancakes = Vector3.new(-1032, 53, -570),
+    Pie = Vector3.new(-1037, 53, -571),
+    Hamburger = Vector3.new(-1050, 52, -572),
+    Omelette = Vector3.new(-1050, 52, -572),
+    Chicken_Fries = Vector3.new(-1127, 52, -298),
+    Tokito_Sake = Vector3.new(-1127, 52, -298),
+    Ramen = Vector3.new(-1127, 52, -298),
+    Tofu_Beef_Soup = Vector3.new(-1127, 52, -298)
+}
+
+-- MOfoods list for checking (using spaces in the names)
+local MOfoods = {
+    "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
+}
+
+-- Function to check if a food exists in the workspace (i.e., equipped)
+local function IsFoodEquipped(foodName)
+    local equippedFood = workspace:FindFirstChild("live") and workspace.live:FindFirstChild("localplayer") and workspace.live.localplayer:FindFirstChild(foodName)
+    return equippedFood ~= nil  -- If the food is in workspace, return true
+end
+
+-- Function to check food quantity in backpack
+local function GetFoodQuantity(foodName)
+    local quantity = 0
+    
+    -- Check Backpack for food items
+    for _, item in pairs(player.Backpack:GetChildren()) do
+        if item.Name == foodName and item:FindFirstChild("Quantity") then
+            quantity = item.Quantity.Value
+            break
+        end
+    end
+
+    return quantity
+end
+
+-- Function to print food quantities
+local function PrintFoodQuantities()
+    print("Food Quantities:")
+    for _, foodName in ipairs(MOfoods) do
+        local foodNameUnderscore = foodName:gsub(" ", "_")  -- Convert to underscore format for checking in `foods`
+        local quantity = GetFoodQuantity(foodNameUnderscore)
+        print(foodName .. ": " .. quantity)
+    end
+end
+
+-- Function to move the character to a position
+local function MoveToTarget(targetPosition)
+    local path = PathfindingService:CreatePath({
+        AgentRadius = 1, -- Adjust to match your character's size
+        AgentHeight = 1, -- Adjust to match your character's height
+        AgentCanJump = true,
+        AgentJumpHeight = 7, -- Adjust to allow for obstacles
+        AgentMaxSlope = 45 -- Adjust for climbable slopes
+    })
+
+    -- Compute the path to the target position
+    path:ComputeAsync(HRP.Position, targetPosition)
+
+    -- Check if the path is valid
+    if path.Status == Enum.PathStatus.Success then
+        -- Get the waypoints from the path
+        local waypoints = path:GetWaypoints()
+
+        -- Walk through the waypoints
+        for _, waypoint in ipairs(waypoints) do
+            player.Character.Humanoid:MoveTo(waypoint.Position)
+            player.Character.Humanoid.MoveToFinished:Wait()
+
+            -- If the waypoint requires jumping, make the humanoid jump
+            if waypoint.Action == Enum.PathWaypointAction.Jump then
+                player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+
+        print("Reached the target!")
+    else
+        warn("Pathfinding failed!")
+    end
+end
+
+-- Function to check if all foods are out of stock (quantity = 0)
+local function AllFoodsZero()
+    for _, foodName in ipairs(MOfoods) do
+        local foodNameUnderscore = foodName:gsub(" ", "_")  -- Convert to underscore format for checking in `foods`
+        if GetFoodQuantity(foodNameUnderscore) > 0 then
+            return false -- If any food has quantity > 0, return false
+        end
+    end
+    return true -- All foods are out of stock
+end
+
+-- Function to process each food in MOfoods list
+local function ProcessFoods()
+    -- Loop through and check if all food quantities are zero before starting
+    while not AllFoodsZero() do
+        print("Waiting for all foods to be out of stock...")
+        wait(1)
+    end
+
+    -- Print the current quantities of all foods
+    PrintFoodQuantities()
+
+    -- Once all foods are out of stock, proceed to buy food
+    for _, foodName in ipairs(MOfoods) do
+        local foodNameUnderscore = foodName:gsub(" ", "_")  -- Convert to underscore format for checking in `foods`
+        
+        local quantity = GetFoodQuantity(foodNameUnderscore)
+        if quantity == 0 then
+            local targetPosition = foods[foodNameUnderscore]  -- Access the position using the underscored name
+            print("Going to buy " .. foodName .. " at position: " .. tostring(targetPosition))
+            MoveToTarget(targetPosition)
+        else
+            print(foodName .. " already has " .. quantity .. " in stock, no need to buy.")
+        end
+    end
+end
+
+-- Start processing food
+ProcessFoods()
