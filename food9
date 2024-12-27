@@ -34,12 +34,28 @@ end
 -- Check if the player has a certain quantity of food
 local function CheckFoodQuantity(foodName)
     local quantity = 0
+    -- Check both Backpack and Character for the food item
+    local foodItemFound = false
+
+    -- Check Backpack for food items
     for _, item in pairs(player.Backpack:GetChildren()) do
         if item.Name == foodName and item:FindFirstChild("Quantity") then
             quantity = item.Quantity.Value
+            foodItemFound = true
             break
         end
     end
+
+    -- Check Character for equipped food items (if any)
+    if not foodItemFound then
+        for _, item in pairs(player.Character:GetChildren()) do
+            if item.Name == foodName and item:FindFirstChild("Quantity") then
+                quantity = item.Quantity.Value
+                break
+            end
+        end
+    end
+
     return quantity
 end
 
@@ -63,11 +79,20 @@ local function MoveToTarget(targetPosition)
         return
     end
 
+    -- Check if the path is valid
+    if path.Status == Enum.PathStatus.Complete then
+        print("Path successfully computed to target position.")
+    else
+        print("Path failed to compute. Status: " .. path.Status)
+        return
+    end
+
     -- Follow the path
     for _, waypoint in ipairs(path:GetWaypoints()) do
         -- Move the character
         player.Character.Humanoid:MoveTo(waypoint.Position)
-        player.Character.Humanoid.MoveToFinished:Wait()
+        print("Moving to waypoint at: " .. tostring(waypoint.Position))
+        player.Character.Humanoid.MoveToFinished:Wait()  -- Wait until the humanoid finishes moving to this waypoint
     end
 end
 
