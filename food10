@@ -59,7 +59,7 @@ local function CheckFoodQuantity(foodName)
     return quantity
 end
 
--- Function to compute path and move to target
+-- Function to compute path and move to target (updated walking logic)
 local function MoveToTarget(targetPosition)
     local path = PathfindingService:CreatePath({
         AgentRadius = 2, -- Adjust based on your character size
@@ -70,29 +70,20 @@ local function MoveToTarget(targetPosition)
     })
 
     -- Compute the path to the target
-    local success, errorMessage = pcall(function()
-        path:ComputeAsync(HRP.Position, targetPosition)
-    end)
-
-    if not success then
-        warn("Failed to compute path: " .. errorMessage)
-        return
-    end
+    path:ComputeAsync(HRP.Position, targetPosition)
 
     -- Check if the path is valid
-    if path.Status == Enum.PathStatus.Complete then
-        print("Path successfully computed to target position.")
-    else
-        print("Path failed to compute. Status: " .. path.Status)
-        return
-    end
+    if path.Status == Enum.PathStatus.Success then
+        -- Get the waypoints from the path
+        local waypoints = path:GetWaypoints()
 
-    -- Follow the path
-    for _, waypoint in ipairs(path:GetWaypoints()) do
-        -- Move the character
-        player.Character.Humanoid:MoveTo(waypoint.Position)
-        print("Moving to waypoint at: " .. tostring(waypoint.Position))
-        player.Character.Humanoid.MoveToFinished:Wait()  -- Wait until the humanoid finishes moving to this waypoint
+        -- Move to each waypoint
+        for _, waypoint in ipairs(waypoints) do
+            player.Character.Humanoid:MoveTo(waypoint.Position)
+            player.Character.Humanoid.MoveToFinished:Wait()
+        end
+    else
+        print("Failed to compute path to target position.")
     end
 end
 
