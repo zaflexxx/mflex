@@ -24,7 +24,13 @@ local MOfoods = {
     "Donut", "Pancakes", "Pie", "Hamburger", "Omelette", "Chicken Fries", "Tokito Sake", "Ramen", "Tofu Beef Soup"
 }
 
--- Function to check if a food has the required quantity in either the backpack or workspace
+-- Function to check if a food exists in the workspace (i.e., equipped)
+local function IsFoodEquipped(foodName)
+    local equippedFood = workspace:FindFirstChild("live") and workspace.live:FindFirstChild("localplayer") and workspace.live.localplayer:FindFirstChild(foodName)
+    return equippedFood ~= nil  -- If the food is in workspace, return true
+end
+
+-- Function to check food quantity in backpack
 local function GetFoodQuantity(foodName)
     local quantity = 0
     
@@ -34,12 +40,6 @@ local function GetFoodQuantity(foodName)
             quantity = item.Quantity.Value
             break
         end
-    end
-
-    -- Check Workspace for equipped food items
-    local equippedFood = workspace:FindFirstChild("live") and workspace.live:FindFirstChild("localplayer") and workspace.live.localplayer:FindFirstChild(foodName)
-    if equippedFood and equippedFood:FindFirstChild("Quantity") then
-        quantity = equippedFood.Quantity.Value
     end
 
     return quantity
@@ -101,31 +101,43 @@ end
 
 -- Function to process each food in MOfoods list
 local function ProcessFoods()
-    local lastPrintTime = tick()
-
     -- Loop through and check if all food quantities are zero before starting
     while not AllFoodsZero() do
         print("Waiting for all foods to be out of stock...")
         wait(1) -- Wait 1 second before checking again
     end
 
+    -- Save the current position before walking
+    local startingPosition = HRP.Position
+    print("Starting position saved: " .. tostring(startingPosition))
+
     -- Loop through each food in the list and check if it needs to be bought
     for _, foodName in ipairs(MOfoods) do
         while GetFoodQuantity(foodName) < foodQuantity do
-            print(foodName .. " quantity is low. Moving to " .. foodName)
-            MoveToTarget(foods[foodName])  -- Move to food position
-            wait(1) -- Wait for a short period to check quantity while walking
-            PrintFoodQuantities()  -- Print quantities to track progress
+            -- If the food is equipped (in the workspace), skip walking to it
+            if not IsFoodEquipped(foodName) then
+                print(foodName .. " quantity is low. Moving to " .. foodName)
+                MoveToTarget(foods[foodName])  -- Move to food position
+                wait(1) -- Wait for a short period to check quantity while walking
+                PrintFoodQuantities()  -- Print quantities to track progress
+            else
+                print(foodName .. " is equipped, waiting for it to be unequipped...")
+                wait(1) -- Wait for the food to be unequipped before checking again
+            end
         end
     end
+
+    -- Once all foods are collected, return to the original position
+    print("All foods bought. Returning to starting position.")
+    MoveToTarget(startingPosition)
 end
 
--- Main function to handle food gathering
+-- Function to handle food gathering process
 local function Main()
     -- First, print all food quantities before starting
     PrintFoodQuantities()
 
-    -- Loop through and check each food
+    -- Process the foods and move as needed
     ProcessFoods()
 
     -- After gathering food, you can add logic to go back to the macro spot or another action.
