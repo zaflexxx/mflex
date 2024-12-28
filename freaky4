@@ -2328,63 +2328,59 @@ local function MO(name)
 		return bed
 	end
 
-	local LastMachine = nil
+	local function GetMachineType(v)
+		-- Check if 'v' has a child named "Screen"
+		if v:FindFirstChild("Screen") then
+			return "Treadmill"
+		-- Check if 'Workspace.Map' has a child named "Screen"
+		elseif workspace.Map:FindFirstChild("Screen") then
+			return "Treadmill"
+		-- Check if 'v' has a MeshPart and a child named "Barbell"
+		elseif v:FindFirstChildOfClass("MeshPart") and v:FindFirstChild("Barbell") then
+			return "Bench"
+		-- Check if 'v' has a "Barbell" but no "inviWall"
+		elseif not v:FindFirstChildOfClass("inviWall") and v:FindFirstChild("Barbell") then
+			return "Squat"
+		-- Check if 'Workspace.Map' has a "Barbell" but no "inviWall"
+		elseif not workspace.Map:FindFirstChildOfClass("inviWall") and workspace.Map:FindFirstChild("Barbell") then
+			return "Squat"
+		else
+			return "nil"
+		end
+	end
+	
 
-local function GetMachineType(v)
-    if v:FindFirstChild("Screen") then
-        return "Treadmill"
-    elseif v:FindFirstChildOfClass("MeshPart") and v:FindFirstChild("Barbell") then
-        return "Bench"
-    elseif not v:FindFirstChildOfClass("inviWall") and v:FindFirstChild("Barbell") then
-        return "Squat"
-    else
-        return "nil"
-    end
-end
+	local function ClosestMachine()
+		local bestdistance, machine = nil, nil
+		local machineinstances =
+			{ workspace.Naniwa, workspace.Map, workspace["Organisation Building"], workspace, workspace:GetChildren()[1436] }
 
-local function ClosestMachine(machinetype)
-    local bestdistance, machine = nil, nil
-    for _, instance in pairs(workspace:GetDescendants()) do
-        if instance:IsA("Model") and instance.Name == "Machine" then
-            local type = GetMachineType(instance)
-            print("Checking machine:", instance.Name, "Type:", type)
-            if type == machinetype and instance:FindFirstChild("ClickDetector") then
-                local distance = (instance.Base.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                if not bestdistance or distance < bestdistance then
-                    bestdistance = distance
-                    machine = instance
-                end
-            end
-        end
-    end
-    return machine
-end
+		for _, instance in pairs(machineinstances) do
+			for i, v in pairs(instance:GetChildren()) do
+				if GetMachineType(v) == machinetype and v.Name == "Machine" then
+					if v:FindFirstChild("Machine") then
+						v = v:FindFirstChild("Machine")
+					end
+					local distance = (v.Base.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+					local MaxActivationDist = v.ClickDetector.MaxActivationDistance
 
-local function TestMachineInteraction(machinetype)
-    if LastMachine ~= nil then
-        if (LastMachine.Base.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            <= LastMachine.ClickDetector.MaxActivationDistance
-            and GetMachineType(LastMachine) == machinetype
-        then
-            print("Interacting with the same machine:", LastMachine.Name)
-            fireclickdetector(LastMachine.ClickDetector)
-            return
-        else
-            print("Leaving the previous machine:", LastMachine.Name)
-            LastMachine = nil
-        end
-    end
+					if distance <= MaxActivationDist then
+						if bestdistance == nil and machine == nil then
+							bestdistance = distance
+							machine = v
+						elseif bestdistance > distance then
+							bestdistance = distance
+							machine = v
+						end
+					end
+				end
+			end
+		end
 
-    local machine = ClosestMachine(machinetype)
-    if machine then
-        print("Interacting with a new machine:", machine.Name)
-        LastMachine = machine
-        fireclickdetector(machine.ClickDetector)
-    else
-        print("No machine found for type:", machinetype)
-    end
-end
+		return machine
+	end
 
+	local lastBestTarget = nil
 
 	local function GetSSBuy()
 		local bestdistance, ss = nil, nil
