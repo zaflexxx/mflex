@@ -3838,9 +3838,9 @@ local function MO(name)
 	 while task.wait() and strikespeed do
 		pcall(function()
 			local bag = GetPunchingBag()
-			local ssbuy = GetSSBuy()  -- Call GetSSBuy() to get the cached position
+			local ssbuy = GetSSBuy()
 			local combatTool = GetStyle()
-		
+
 			if bag ~= nil and ssbuy ~= nil and strikespeed then
 				if
 					game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("SpeedTraining") == nil
@@ -3915,67 +3915,68 @@ local function MO(name)
 							game.Players.LocalPlayer.Character.Humanoid:EquipTool(combatTool)
 							task.wait(0.1)
 						end
-		
+
 						local m2nextturn = false
 						repeat
 							if strikespeed and RhythmToggle then
 								ChargeRhythm(combatTool)
 							end
-		
+
 							 -- ... existing code
-							 if game.Players.LocalPlayer.PlayerGui:FindFirstChild("SpeedTraining") and strikespeed then
-								 if game.Players.LocalPlayer.PlayerGui.SpeedTraining.CanHit.Value and
-									combatTool.Parent == game.Players.LocalPlayer.Character and strikespeed then
-									 if combatTool.Parent == game.Players.LocalPlayer.Character then
-										 if not m2nextturn then
-											 repeat
-												 combatTool:Activate()
-												 task.wait()
-											 until game.Players.LocalPlayer.PlayerGui.SpeedTraining.CanHit.Value or
-												   not strikespeed or
-												   combatTool.Parent == game.Players.LocalPlayer.Backpack
-										 else
-											 if ssuseM2 then
-												 repeat
-													 local successm2 = false
-		
-													 if currentcombo == 5 then
-														 successm2 = true
-														 break
-													 end
-													 local VIM = game:GetService("VirtualInputManager")
-													 VIM:SendMouseButtonEvent(0, 500, 1, true, game, 1)
-													 task.wait(0.1)
-													 VIM:SendMouseButtonEvent(0, 500, 1, false, game, 1)
-													 task.wait(0.5)
-												 until successm2 or not strikespeed or
-													   combatTool.Parent == game.Players.LocalPlayer.Backpack or
-													   not ssuseM2
-											 end
-											 m2nextturn = false
-										 end
-										 local Jaja = tick()
-										 repeat
-											 task.wait()
-											 if currentcombo == 4 and ssuseM2 then
-												 m2nextturn = true
-											 end
-										 until not game.Players.LocalPlayer.PlayerGui.SpeedTraining.CanHit.Value or
-											   (tick() - Jaja) >= 0.5
-										 if currentcombo == 4 and not m2nextturn and ssuseM2 then
-											 m2nextturn = true
-										 end
-									 end
-									 task.wait()
-								 end
-							 end
-							 task.wait()
-						 until not game.Players.LocalPlayer.PlayerGui:FindFirstChild("SpeedTraining") or not strikespeed
-					 end)
-				 end
-			 end
-		 end)
-		
+                             if game.Players.LocalPlayer.PlayerGui:FindFirstChild("SpeedTraining") and strikespeed then
+                                 if game.Players.LocalPlayer.PlayerGui.SpeedTraining.CanHit.Value and
+                                    combatTool.Parent == game.Players.LocalPlayer.Character and strikespeed then
+                                     if combatTool.Parent == game.Players.LocalPlayer.Character then
+                                         if not m2nextturn then
+                                             repeat
+                                                 combatTool:Activate()
+                                                 task.wait()
+                                             until game.Players.LocalPlayer.PlayerGui.SpeedTraining.CanHit.Value or
+                                                   not strikespeed or
+                                                   combatTool.Parent == game.Players.LocalPlayer.Backpack
+                                         else
+                                             if ssuseM2 then
+                                                 repeat
+                                                     local successm2 = false
+
+                                                     if currentcombo == 5 then
+                                                         successm2 = true
+                                                         break
+                                                     end
+                                                     local VIM = game:GetService("VirtualInputManager")
+                                                     VIM:SendMouseButtonEvent(0, 500, 1, true, game, 1)
+                                                     task.wait(0.1)
+                                                     VIM:SendMouseButtonEvent(0, 500, 1, false, game, 1)
+                                                     task.wait(0.5)
+                                                 until successm2 or not strikespeed or
+                                                       combatTool.Parent == game.Players.LocalPlayer.Backpack or
+                                                       not ssuseM2
+                                             end
+                                             m2nextturn = false
+                                         end
+                                         local Jaja = tick()
+                                         repeat
+                                             task.wait()
+                                             if currentcombo == 4 and ssuseM2 then
+                                                 m2nextturn = true
+                                             end
+                                         until not game.Players.LocalPlayer.PlayerGui.SpeedTraining.CanHit.Value or
+                                               (tick() - Jaja) >= 0.5
+                                         if currentcombo == 4 and not m2nextturn and ssuseM2 then
+                                             m2nextturn = true
+                                         end
+                                     end
+                                     task.wait()
+                                 end
+                             end
+                             task.wait()
+                         until not game.Players.LocalPlayer.PlayerGui:FindFirstChild("SpeedTraining") or not strikespeed
+                     end)
+                 end
+             end
+         end)
+     end
+ end)
 
 	main:Toggle("SS Use M2", false, function(Value)
 		ssuseM2 = Value
