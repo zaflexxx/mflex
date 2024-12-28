@@ -2339,8 +2339,6 @@ local function MO(name)
 		elseif not v:FindFirstChildOfClass("inviWall") and v:FindFirstChild("Barbell") then
 			return "Squat"
 		-- Check if 'Workspace.Map' has a "Barbell" but no "inviWall"
-		elseif not workspace.Map:FindFirstChildOfClass("inviWall") and workspace.Map:FindFirstChild("Barbell") then
-			return "Squat"
 		else
 			return "nil"
 		end
