@@ -2332,9 +2332,6 @@ local function MO(name)
 		-- Check if 'v' has a child named "Screen"
 		if v:FindFirstChild("Screen") then
 			return "Treadmill"
-		-- Check if 'Workspace.Map' has a child named "Screen"
-		elseif workspace.Map:FindFirstChild("Screen") then
-			return "Treadmill"
 		-- Check if 'v' has a MeshPart and a child named "Barbell"
 		elseif v:FindFirstChildOfClass("MeshPart") and v:FindFirstChild("Barbell") then
 			return "Bench"
