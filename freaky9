@@ -2377,50 +2377,37 @@ local function MO(name)
 
 	local lastBestTarget = nil
 
-	local lastBestSSBuy = nil  -- Variable to store the last best SS position
-	local lastUpdateTime = tick()  -- Track when the position was last updated
-	
-	-- Function to get the best SS position, but only periodically
 	local function GetSSBuy()
-		local currentTime = tick()
-		
-		-- Only recalculate if enough time has passed (3 hours)
-		if currentTime - lastUpdateTime > 10800 then
-			local bestdistance, ss = nil, nil
-			local ssinstances = {
-				workspace.Map,
-				workspace.kUREtRAINER,
-			}
-	
-			for _, instance in pairs(ssinstances) do
-				for i, v in pairs(instance:GetChildren()) do
-					if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
-						if v:FindFirstChild("Strike Speed Training: $180") then
-							v = v:FindFirstChild("Strike Speed Training: $180")
-						end
-						local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-						local MaxActivationDist = v.ClickDetector.MaxActivationDistance
-	
-						if distance <= MaxActivationDist then
-							if bestdistance == nil and ss == nil then
-								bestdistance = distance
-								ss = v
-							elseif bestdistance > distance then
-								bestdistance = distance
-								ss = v
-							end
+		local bestdistance, ss = nil, nil
+		local ssinstances = {
+			workspace.Map,
+			workspace.kUREtRAINER,
+		}
+
+		for _, instance in pairs(ssinstances) do
+			for i, v in pairs(instance:GetChildren()) do
+				if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
+					if v:FindFirstChild("Strike Speed Training: $180") then
+						v = v:FindFirstChild("Strike Speed Training: $180")
+					end
+					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
+					local MaxActivationDist = v.ClickDetector.MaxActivationDistance
+
+					if distance <= MaxActivationDist then
+						if bestdistance == nil and ss == nil then
+							bestdistance = distance
+							ss = v
+						elseif bestdistance > distance then
+							bestdistance = distance
+							ss = v
 						end
 					end
 				end
 			end
-	
-			lastBestSSBuy = ss  -- Update the cached SS position
-			lastUpdateTime = currentTime  -- Update the last update time
 		end
-	
-		return lastBestSSBuy  -- Return the cached position
+
+		return ss
 	end
-	
 	local function ChargeRhythm(combatTool)
 		if not RhythmToggle then
 			return
