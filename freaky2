@@ -2333,7 +2333,7 @@ local function MO(name)
 			return "Treadmill"
 		elseif v:FindFirstChildOfClass("MeshPart") and v:FindFirstChild("Barbell") then
 			return "Bench"
-		elseif not v:FindFirstChildOfClass("Weight1") and v:FindFirstChild("Barbell") then
+		elseif not v:FindFirstChildOfClass("inviWall") and v:FindFirstChild("Barbell") then
 			return "Squat"
 		else
 			return "nil"
