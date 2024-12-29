@@ -2329,21 +2329,26 @@ local function MO(name)
 	end
 
 	local function GetMachineType(v)
+		-- Check if 'v' has a child named "Screen"
 		if v:FindFirstChild("Screen") then
 			return "Treadmill"
+		-- Check if 'v' has a MeshPart and a child named "Barbell"
 		elseif v:FindFirstChildOfClass("MeshPart") and v:FindFirstChild("Barbell") then
 			return "Bench"
-		elseif not v:FindFirstChildOfClass("MeshPart") and v:FindFirstChild("Barbell") then
+		-- Check if 'v' has a "Barbell" but no "inviWall"
+		elseif not v:FindFirstChildOfClass("inviWall") and v:FindFirstChild("Barbell") then
 			return "Squat"
+		-- Check if 'Workspace.Map' has a "Barbell" but no "inviWall"
 		else
 			return "nil"
 		end
 	end
+	
 
 	local function ClosestMachine()
 		local bestdistance, machine = nil, nil
 		local machineinstances =
-			{ workspace.Naniwa, workspace["Organisation Building"], workspace, workspace:GetChildren()[1436] }
+			{ workspace.Naniwa, workspace.Map, workspace["Organisation Building"], workspace, workspace:GetChildren()[1436] }
 
 		for _, instance in pairs(machineinstances) do
 			for i, v in pairs(instance:GetChildren()) do
@@ -2376,6 +2381,7 @@ local function MO(name)
 		local bestdistance, ss = nil, nil
 		local ssinstances = {
 			workspace.Map,
+			workspace,
 			workspace.kUREtRAINER,
 		}
 
