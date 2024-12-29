@@ -2381,6 +2381,7 @@ local function MO(name)
 		local bestdistance, ss = nil, nil
 		local ssinstances = {
 			workspace.Map,
+			workspace,
 			workspace.kUREtRAINER,
 		}
 
