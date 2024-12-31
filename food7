@@ -5700,6 +5700,31 @@ local function MO(name)
 		end
 	end)
 
+
+
+
+
+	local activeToggles = {}
+
+	local function disableAllTrainings()
+		for i, toggle in pairs(trainingtoggles) do
+			if toggle:GetState() == true then
+				activeToggles[i] = true
+				toggle:SetState(false)
+			else
+				activeToggles[i] = false
+			end
+		end
+	end
+	
+	local function reEnableTrainings()
+		for i, wasActive in pairs(activeToggles) do
+			if wasActive then
+				trainingtoggles[i]:SetState(true)
+			end
+		end
+	end
+
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
 	
@@ -5710,7 +5735,7 @@ local function MO(name)
 					if #trainingsTodo > 0 then
 						trainingsTodo = {}
 					end
-					disableAllTraining()
+					disableAllTrainings()
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -5753,15 +5778,7 @@ local function MO(name)
 						WalkTo(originalPosition.Position)
 						task.wait(0.5)
 						webhook("Auto Replenish", "Resuming training.")
-						for i, v in pairs(trainingsTodo) do
-							v:SetState(true)
-						end
-
-						trainingsTodo = {}
-
-					task.wait(0.5)
-					webhook("Auto Replenish", "training is back baby.")
-
+	                    reEnableTraining()
 						end
 					end
 				end
