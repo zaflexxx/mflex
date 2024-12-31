@@ -2383,16 +2383,19 @@ local function MO(name)
 			workspace.Map,
 			workspace.kUREtRAINER,
 		}
-
+	
 		for _, instance in pairs(ssinstances) do
 			for i, v in pairs(instance:GetChildren()) do
+				-- Small delay between each search
+				wait(0.5)  -- Adjust delay time as needed (in seconds)
+	
 				if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
 					if v:FindFirstChild("Strike Speed Training: $180") then
 						v = v:FindFirstChild("Strike Speed Training: $180")
 					end
 					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
 					local MaxActivationDist = v.ClickDetector.MaxActivationDistance
-
+	
 					if distance <= MaxActivationDist then
 						if bestdistance == nil and ss == nil then
 							bestdistance = distance
@@ -2405,9 +2408,10 @@ local function MO(name)
 				end
 			end
 		end
-
+	
 		return ss
 	end
+	
 	local function ChargeRhythm(combatTool)
 		if not RhythmToggle then
 			return
