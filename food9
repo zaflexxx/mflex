@@ -5724,6 +5724,7 @@ local function MO(name)
 			end
 		end
 	end
+	
 
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
@@ -5732,9 +5733,6 @@ local function MO(name)
 			task.spawn(function()
 				while autoReplenishFood do
 					task.wait()
-					if #trainingsTodo > 0 then
-						trainingsTodo = {}
-					end
 					disableAllTraining()
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
@@ -5778,7 +5776,7 @@ local function MO(name)
 						WalkTo(originalPosition.Position)
 						task.wait(0.5)
 						webhook("Auto Replenish", "Resuming training.")
-reEnableTraining()
+						reEnableTraining()
 						end
 					end
 				end
