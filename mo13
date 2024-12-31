@@ -5721,14 +5721,41 @@ local function MO(name)
 						local desiredAmount = 12 -- You can set this to a user input value
 	
 						for foodName, position in pairs(foodLocations) do
-							WalkTo(position)
-							task.wait(0.5)
-							webhook("Auto Replenish", "Buying " .. foodName)
-							while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
-								  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
-								fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
-								task.wait(0.5)
-							end
+							local path = PFS:CreatePath({
+								AgentRadius = 2,
+								AgentHeight = 5,
+								AgentCanJump = true,
+								AgentJumpHeight = 5,
+								AgentMaxSlope = 45,
+								AgentMaxClimb = 2,
+								WaypointSpacing = 4
+							})
+							path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, position)
+	
+							path.Blocked:Connect(function(blockedWaypointIndex)
+								-- Handle path blocked event
+								path:Stop()
+								task.wait(1)
+								path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, position)
+							end)
+	
+							path:MoveTo(game.Players.LocalPlayer.Character)
+	
+							path.Reached:Connect(function()
+								-- Successfully reached the destination
+								webhook("Auto Replenish", "Buying " .. foodName)
+								while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
+									  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
+									fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
+									task.wait(0.5)
+								end
+							end)
+	
+							path.Stopped:Connect(function()
+								-- Path stopped, possibly due to an obstacle
+								task.wait(1)
+								path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, position)
+							end)
 						end
 	
 						webhook("Auto Replenish", "Returning to original position.")
