@@ -21,7 +21,7 @@ local Library = {}
 function Library:Window(winName,mainColor,hideBind)
     winName = winName or "brought to you by m1kecorp"
     mainColor = mainColor or Color3.fromRGB(104, 186, 227)
-    hideBind = hideBind or Enum.KeyCode.RightAlt
+    hideBind = hideBind or Enum.KeyCode.Z
 
     if _G.Library ~= nil then _G.Library:Destroy() end
     
@@ -6696,7 +6696,7 @@ if not folder then
 end
 
 local hideuibind
-hideuibind = settings:Bind("Hide GUI",Enum.KeyCode.RightAlt,function()
+hideuibind = settings:Bind("Hide GUI",Enum.KeyCode.Z,function()
     win.ToggleVisiblity()
 end)
 
