@@ -5699,6 +5699,32 @@ local function MO(name)
 			end
 		end
 	end)
+
+	local function WalkTo(point)
+		pcall(function()
+			local currentPath = PFS:FindPathAsync(HRP.Position, point)
+			local pathExists = false
+
+			if currentPath.Status == pathStatus.Success then
+				pathExists = true
+
+				spawn(function()
+					while pathExists and task.wait() and shared.currentPoint ~= nil do
+						player.Character.Humanoid.WalkToPoint = shared.currentPoint
+					end
+				end)
+
+				for i, v in pairs(currentPath:GetWaypoints()) do
+					repeat
+						task.wait()
+						shared.currentPoint = v.Position
+					until (HRP.Position - v.Position).Magnitude < 5
+				end
+			elseif currentPath.Status ~= pathStatus.Success or shared.currentPoint == nil then
+				pathExists = false
+			end
+		end)
+	end
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
 	
@@ -5721,41 +5747,14 @@ local function MO(name)
 						local desiredAmount = 12 -- You can set this to a user input value
 	
 						for foodName, position in pairs(foodLocations) do
-							local path = PFS:CreatePath({
-								AgentRadius = 2,
-								AgentHeight = 5,
-								AgentCanJump = true,
-								AgentJumpHeight = 5,
-								AgentMaxSlope = 45,
-								AgentMaxClimb = 2,
-								WaypointSpacing = 4
-							})
-							path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, position)
-	
-							path.Blocked:Connect(function(blockedWaypointIndex)
-								-- Handle path blocked event
-								path:Stop()
-								task.wait(1)
-								path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, position)
-							end)
-	
-							path:MoveTo(game.Players.LocalPlayer.Character)
-	
-							path.Reached:Connect(function()
-								-- Successfully reached the destination
-								webhook("Auto Replenish", "Buying " .. foodName)
-								while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
-									  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
-									fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
-									task.wait(0.5)
-								end
-							end)
-	
-							path.Stopped:Connect(function()
-								-- Path stopped, possibly due to an obstacle
-								task.wait(1)
-								path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, position)
-							end)
+							WalkTo(position)
+							task.wait(0.5)
+							webhook("Auto Replenish", "Buying " .. foodName)
+							while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
+								  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
+								fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
+								task.wait(0.5)
+							end
 						end
 	
 						webhook("Auto Replenish", "Returning to original position.")
