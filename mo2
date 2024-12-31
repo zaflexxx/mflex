@@ -5730,12 +5730,12 @@ local function MO(name)
 							
 							while true do
 								local foodItem = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName)
-								if foodItem and game.Players.LocalPlayer.Character:FindFirstChild(foodItem).Quantity.Value >= desiredAmount then
+								if foodItem and foodItem.Quantity.Value >= desiredAmount then
 									print("Bought enough of:", foodName)
 									webhook("Auto Replenish", "Bought enough " .. foodName)
 									break
 								else
-									print("Current quantity of", foodName, ":", foodName and game.Players.LocalPlayer.Character:FindFirstChild(foodName).Quantity.Value or 0)
+									print("Current quantity of", foodName, ":", foodItem and foodItem.Quantity.Value or 0)
 									task.wait(0.15)
 								end
 							end
