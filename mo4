@@ -3475,7 +3475,7 @@ local function MO(name)
 	local function GetDuraBuy()
 		local bestdistance, durabuy = nil, nil
 		local durainstances = {
-			workspace,
+			workspace.Map,
 			workspace.kUREtRAINER,
 		}
 
