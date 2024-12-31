@@ -2377,38 +2377,44 @@ local function MO(name)
 
 	local lastBestTarget = nil
 
-	local function GetSSBuy()
-		local bestdistance, ss = nil, nil
-		local ssinstances = {
-			workspace.Map,
-			workspace,
-			workspace.kUREtRAINER,
-		}
+-- Store the best distance and ss globally (outside the function)
+local bestSSDistance, ss = nil, nil
 
-		for _, instance in pairs(ssinstances) do
-			for i, v in pairs(instance:GetChildren()) do
-				if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
-					if v:FindFirstChild("Strike Speed Training: $180") then
-						v = v:FindFirstChild("Strike Speed Training: $180")
-					end
-					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-					local MaxActivationDist = v.ClickDetector.MaxActivationDistance
+local function GetSSBuy()
+    -- Only recalculate if bestSSDistance is not already set
+    if bestSSDistance == nil then
+        local ssinstances = {
+            workspace.Map,
+            workspace.kUREtRAINER,
+        }
 
-					if distance <= MaxActivationDist then
-						if bestdistance == nil and ss == nil then
-							bestdistance = distance
-							ss = v
-						elseif bestdistance > distance then
-							bestdistance = distance
-							ss = v
-						end
-					end
-				end
-			end
-		end
+        for _, instance in pairs(ssinstances) do
+            for i, v in pairs(instance:GetChildren()) do
+                if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
+                    if v:FindFirstChild("Strike Speed Training: $180") then
+                        v = v:FindFirstChild("Strike Speed Training: $180")
+                    end
+                    local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
+                    local MaxActivationDist = v.ClickDetector.MaxActivationDistance
 
-		return ss
-	end
+                    if distance <= MaxActivationDist then
+                        if bestSSDistance == nil then
+                            bestSSDistance = distance
+                            ss = v
+                        elseif bestSSDistance > distance then
+                            bestSSDistance = distance
+                            ss = v
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Return the saved ss (Strike Speed object)
+    return ss
+end
+
 	local function ChargeRhythm(combatTool)
 		if not RhythmToggle then
 			return
@@ -3371,8 +3377,12 @@ local function MO(name)
 		end)
 	end
 
-	local function GetPunchingBag()
-		local bestdistance, bag = nil, nil
+-- Store the best distance and bag globally (outside the function)
+local bestdistance, bag = nil, nil
+
+local function GetPunchingBag()
+	-- Only recalculate if bestdistance is not already set
+	if bestdistance == nil then
 		local baginstances = {
 			workspace:FindFirstChild("Bag Wrestling"),
 			workspace,
@@ -3406,6 +3416,9 @@ local function MO(name)
 				end
 			end
 		end
+	end
+end
+
 	
 		-- Check all descendants in the workspace
 		for _, v in pairs(workspace:GetDescendants()) do
