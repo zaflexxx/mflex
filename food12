@@ -5705,7 +5705,6 @@ local function MO(name)
 
 
 
-
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
 	
@@ -5713,7 +5712,8 @@ local function MO(name)
 			task.spawn(function()
 				while autoReplenishFood do
 					task.wait()
-					disableAllTraining()
+					if not CheckForFood() then
+						disableAllTraining()
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
