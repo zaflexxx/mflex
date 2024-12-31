@@ -5720,7 +5720,7 @@ local function MO(name)
 							Hamburger = Vector3.new(-1050, 52, -572),
 							Omelette = Vector3.new(-1050, 52, -572)
 						}
-						local desiredAmount = 12 -- You can set this to a user input value
+						local desiredAmount = 1 -- You can set this to a user input value
 	
 						for foodName, position in pairs(foodLocations) do
 							WalkTo(position)
