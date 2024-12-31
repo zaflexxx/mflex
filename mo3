@@ -6555,7 +6555,7 @@ local GameList = {
         UIConfig = RevengersDos,
     },
     ["Mighty Omega"] = {
-        PlaceIds = {4878988249,16225367431,6320657368},
+        PlaceIds = {4878988249,16225367431,6320657368, 12355185014, 1663370770},
         UIConfig = MO,
     },
     ["Tatakai: Remastered"] = {
