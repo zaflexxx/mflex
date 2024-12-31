@@ -1737,18 +1737,12 @@ local function MO(name)
 	}
 
 	local function CheckForFood()
-		if SelectedFood == nil then
-			return false
-		end
-		for i, v in pairs(recipes[SelectedFood]) do
-			if game.Players.LocalPlayer.Backpack:FindFirstChild(i) == nil then
-				return false
-			end
-			if game.Players.LocalPlayer.Backpack:FindFirstChild(i).Quantity.Value < v then
-				return false
+		for _, food in pairs(MOfoods) do
+			if game.Players.LocalPlayer.Backpack:FindFirstChild(food) then
+				return true
 			end
 		end
-		return true
+		return false
 	end
 
 	local function GetItemTable()
@@ -5712,8 +5706,10 @@ local function MO(name)
 			task.spawn(function()
 				while autoReplenishFood do
 					task.wait()
-					if CheckForFood() == false then
+					if not CheckForFood() then
 						disableAllTraining()
+						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
+	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
 						local foodLocations = {
 							Donut = Vector3.new(-1031, 54, -562),
@@ -5727,6 +5723,7 @@ local function MO(name)
 						for foodName, position in pairs(foodLocations) do
 							WalkTo(position)
 							task.wait(0.5)
+							webhook("Auto Replenish", "Buying " .. foodName)
 							while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
 								  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
 								fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
@@ -5734,8 +5731,10 @@ local function MO(name)
 							end
 						end
 	
+						webhook("Auto Replenish", "Returning to original position.")
 						WalkTo(originalPosition.Position)
 						task.wait(0.5)
+						webhook("Auto Replenish", "Resuming training.")
 						for _, trainingToggle in pairs(trainingtoggles) do
 							trainingToggle:SetState(true)
 						end
