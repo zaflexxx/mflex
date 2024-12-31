@@ -2377,7 +2377,19 @@ local function MO(name)
 
 	local lastBestTarget = nil
 
+	local lastExecution = 0
+	local cooldown = 1  -- Set cooldown time in seconds (adjust as needed)
+	
 	local function GetSSBuy()
+		local currentTime = tick()
+	
+		-- Prevent function from running too frequently
+		if currentTime - lastExecution < cooldown then
+			return nil
+		end
+	
+		lastExecution = currentTime  -- Update the time of last execution
+	
 		local bestdistance, ss = nil, nil
 		local ssinstances = {
 			workspace.Map,
@@ -2386,9 +2398,6 @@ local function MO(name)
 	
 		for _, instance in pairs(ssinstances) do
 			for i, v in pairs(instance:GetChildren()) do
-				-- Small delay between each search
-				wait(0.5)  -- Adjust delay time as needed (in seconds)
-	
 				if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
 					if v:FindFirstChild("Strike Speed Training: $180") then
 						v = v:FindFirstChild("Strike Speed Training: $180")
