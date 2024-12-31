@@ -5710,10 +5710,19 @@ local function MO(name)
 	
 		if autoReplenishFood then
 			task.spawn(function()
+				local activeToggles = {}
+	
+				-- Store the state of active training toggles
+				for _, trainingToggle in pairs(trainingtoggles) do
+					if trainingToggle:GetState() then
+						table.insert(activeToggles, trainingToggle)
+						trainingToggle:SetState(false) -- Disable them temporarily
+					end
+				end
+	
 				while autoReplenishFood do
 					task.wait()
 					if not CheckForFood() then
-						disableAllTraining()
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -5727,11 +5736,9 @@ local function MO(name)
 						local desiredAmount = 5 -- Default value, overridden by user slider
 	
 						for foodName, position in pairs(foodLocations) do
-							-- Notify about moving to buy the next food
 							webhook("Auto Replenish", "Heading to buy " .. foodName)
 							WalkTo(position)
 							task.wait(0.5)
-							print("Attempting to buy:", foodName)
 							webhook("Auto Replenish", "Buying " .. foodName)
 	
 							while true do
@@ -5739,35 +5746,29 @@ local function MO(name)
 								local currentQuantity = foodItem and foodItem.Quantity.Value or 0
 	
 								if currentQuantity >= desiredAmount then
-									print("Bought enough of:", foodName)
 									webhook("Auto Replenish", "Bought enough " .. foodName)
-									break -- Exit the loop to move to the next food
+									break
 								else
-									print("Current quantity of", foodName, ":", currentQuantity)
 									task.wait(0.15)
 								end
 							end
-							-- Notify before moving to the next food
 							webhook("Auto Replenish", "Moving to the next food on the list.")
 						end
 	
-						-- After buying all foods, return to the original position
 						webhook("Auto Replenish", "Returning to original position.")
 						WalkTo(originalPosition.Position)
 						task.wait(0.5)
 						webhook("Auto Replenish", "Resuming training.")
-						for i, v in pairs(trainingsTodo) do
-							v:SetState(true)
-						end
-
-						trainingsTodo = {}
+	
+						-- Restore the state of active training toggles
+						for _, trainingToggle in pairs(activeToggles) do
+							trainingToggle:SetState(true)
 						end
 					end
 				end
 			end)
 		end
 	end)
-	
 	risky:Slider("Desired Food Quantity", {min = 1, max = 12, def = 5}, function(Value)
 		desiredAmount = Value
 	end)
