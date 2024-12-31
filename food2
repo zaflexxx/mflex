@@ -5708,8 +5708,7 @@ local function MO(name)
 			task.spawn(function()
 				while autoReplenishFood do
 					task.wait()
-					if foodfound ~= nil then
-						if foodfound == false then
+					if not CheckForFood() then
 						disableAllTraining()
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
