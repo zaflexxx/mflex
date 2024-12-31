@@ -5756,8 +5756,11 @@ local function MO(name)
 						WalkTo(originalPosition.Position)
 						task.wait(0.5)
 						webhook("Auto Replenish", "Resuming training.")
-						for _, trainingToggle in pairs(trainingtoggles) do
-							trainingToggle:SetState(true)
+						for i, v in pairs(trainingsTodo) do
+							v:SetState(true)
+						end
+
+						trainingsTodo = {}
 						end
 					end
 				end
