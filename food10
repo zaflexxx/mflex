@@ -5704,27 +5704,7 @@ local function MO(name)
 
 
 
-	local activeToggles = {}
 
-	local function disableAllTraining()
-		for i, toggle in pairs(trainingtoggles) do
-			if toggle:GetState() == true then
-				activeToggles[i] = true
-				toggle:SetState(false)
-			else
-				activeToggles[i] = false
-			end
-		end
-	end
-	
-	local function reEnableTraining()
-		for i, wasActive in pairs(activeToggles) do
-			if wasActive then
-				trainingtoggles[i]:SetState(true)
-			end
-		end
-	end
-	
 
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
@@ -5776,7 +5756,11 @@ local function MO(name)
 						WalkTo(originalPosition.Position)
 						task.wait(0.5)
 						webhook("Auto Replenish", "Resuming training.")
-						reEnableTraining()
+						for i, v in pairs(trainingsTodo) do
+							v:SetState(true)
+						end
+
+						trainingsTodo = {}
 						end
 					end
 				end
