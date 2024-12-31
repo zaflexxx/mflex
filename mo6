@@ -2378,6 +2378,7 @@ local function MO(name)
 	local lastBestTarget = nil
 
 -- Store the best distance and ss globally (outside the function)
+-- Store the best distance and ss globally (outside the function)
 local bestSSDistance, ss = nil, nil
 
 local function GetSSBuy()
@@ -2390,25 +2391,37 @@ local function GetSSBuy()
 
         for _, instance in pairs(ssinstances) do
             for i, v in pairs(instance:GetChildren()) do
+                -- Check if the object has the required name and a "Strike Speed Training: $180" child
                 if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
+                    -- Get the correct child if it's named "Strike Speed Training: $180"
                     if v:FindFirstChild("Strike Speed Training: $180") then
                         v = v:FindFirstChild("Strike Speed Training: $180")
                     end
-                    local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-                    local MaxActivationDist = v.ClickDetector.MaxActivationDistance
 
-                    if distance <= MaxActivationDist then
-                        if bestSSDistance == nil then
-                            bestSSDistance = distance
-                            ss = v
-                        elseif bestSSDistance > distance then
-                            bestSSDistance = distance
-                            ss = v
+                    -- Check if the object has a "Head" and a valid position
+                    if v:FindFirstChild("Head") then
+                        local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
+                        local MaxActivationDist = v.ClickDetector.MaxActivationDistance
+
+                        if distance <= MaxActivationDist then
+                            -- First time or a closer distance found
+                            if bestSSDistance == nil or bestSSDistance > distance then
+                                bestSSDistance = distance
+                                ss = v
+                            end
                         end
+                    else
+                        print("Object does not have a 'Head' part: " .. v.Name)
                     end
                 end
             end
         end
+    end
+
+    -- If no valid ss was found, print an error and return nil
+    if ss == nil then
+        print("No valid 'Strike Speed Training' object found.")
+        return nil
     end
 
     -- Return the saved ss (Strike Speed object)
@@ -3378,45 +3391,55 @@ end
 	end
 
 -- Store the best distance and bag globally (outside the function)
+-- Store the best distance and bag globally (outside the function)
 local bestdistance, bag = nil, nil
 
 local function GetPunchingBag()
-	-- Only recalculate if bestdistance is not already set
-	if bestdistance == nil then
-		local baginstances = {
-			workspace:FindFirstChild("Bag Wrestling"),
-			workspace,
-			workspace:FindFirstChild("Kung Fu Dojo") and workspace["Kung Fu Dojo"]:FindFirstChild("Bag"),
-			workspace:FindFirstChild("Model"),
-			workspace:FindFirstChild("Organisation Building"),
-			workspace:FindFirstChild("Judo Dojo") and workspace["Judo Dojo"]:FindFirstChild("bags"),
-			workspace:FindFirstChild("Map"),  -- Added Map to the list
-		}
-	
-		-- Function to get a valid part for distance calculation
-		local function getValidPart(model)
-			return model:FindFirstChildWhichIsA("BasePart")
-		end
-	
-		-- Check specific known locations
-		for _, instance in pairs(baginstances) do
-			if instance then
-				for i, v in pairs(instance:GetChildren()) do
-					if v.Name == "PunchingBag" or v:FindFirstChild("PunchingBag") then
-						local punchingBagPart = getValidPart(v)
-						if punchingBagPart then
-							local distance = (punchingBagPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-	
-							if bestdistance == nil or distance < bestdistance then
-								bestdistance = distance
-								bag = v
-							end
-						end
-					end
-				end
-			end
-		end
-	end
+    -- Only recalculate if bestdistance is not already set
+    if bestdistance == nil then
+        local baginstances = {
+            workspace:FindFirstChild("Bag Wrestling"),
+            workspace,
+            workspace:FindFirstChild("Kung Fu Dojo") and workspace["Kung Fu Dojo"]:FindFirstChild("Bag"),
+            workspace:FindFirstChild("Model"),
+            workspace:FindFirstChild("Organisation Building"),
+            workspace:FindFirstChild("Judo Dojo") and workspace["Judo Dojo"]:FindFirstChild("bags"),
+            workspace:FindFirstChild("Map"),  -- Added Map to the list
+        }
+    
+        -- Function to get a valid part for distance calculation
+        local function getValidPart(model)
+            return model:FindFirstChildWhichIsA("BasePart")
+        end
+    
+        -- Check specific known locations
+        for _, instance in pairs(baginstances) do
+            if instance then
+                for i, v in pairs(instance:GetChildren()) do
+                    if v.Name == "PunchingBag" or v:FindFirstChild("PunchingBag") then
+                        local punchingBagPart = getValidPart(v)
+                        if punchingBagPart then
+                            local distance = (punchingBagPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+
+                            if bestdistance == nil or distance < bestdistance then
+                                bestdistance = distance
+                                bag = v
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- If no valid bag was found, print an error and return nil
+    if bag == nil then
+        print("No valid PunchingBag object found.")
+        return nil
+    end
+
+    -- Return the saved bag (Punching Bag object)
+    return bag
 end
 
 	
