@@ -5777,7 +5777,6 @@ local function MO(name)
 							webhook("Auto Replenish", "Buying " .. foodName)
 							while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
 								  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
-								fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
 								task.wait(0.15)
 							end
 						end
