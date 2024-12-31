@@ -5725,10 +5725,19 @@ local function MO(name)
 						for foodName, position in pairs(foodLocations) do
 							WalkTo(position)
 							task.wait(0.5)
+							print("Attempting to buy:", foodName)
 							webhook("Auto Replenish", "Buying " .. foodName)
-							while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
-								  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
-								task.wait(0.15)
+							
+							while true do
+								local foodItem = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName)
+								if foodItem and foodItem.Quantity.Value >= desiredAmount then
+									print("Bought enough of:", foodName)
+									webhook("Auto Replenish", "Bought enough " .. foodName)
+									break
+								else
+									print("Current quantity of", foodName, ":", foodItem and foodItem.Quantity.Value or 0)
+									task.wait(0.15)
+								end
 							end
 						end
 	
