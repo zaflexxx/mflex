@@ -2378,7 +2378,7 @@ local function MO(name)
 	local lastBestTarget = nil
 
 	local lastExecution = 0
-	local cooldown = 1  -- Set cooldown time in seconds (adjust as needed)
+	local cooldown = 2  -- Set cooldown time in seconds (adjust as needed)
 	
 	local function GetSSBuy()
 		local currentTime = tick()
@@ -3104,25 +3104,13 @@ local function MO(name)
 						end
 					end
 				end
-if foodfound ~= nil then
-    if foodfound == false then
-        if NoFoodNotify then
-            webhook("Macro Notifier", "You ran out of food.")
-            disableAllTraining()
-            
-            local function checkAndPurchaseFood()
-                if autoBuyEnabled then
-                    for foodName, _ in pairs(foodLocations) do
-                        purchaseFood(foodName, desiredQuantity)
-                    end
-                end
-            end
-            
-            -- Call this function when food runs out
-            checkAndPurchaseFood() -- Add this line to call the function
-        end
-    end
-end
+
+				if foodfound ~= nil then
+					if foodfound == false then
+						if NoFoodNotify then
+							webhook("Macro Notifier", "You ran out of food.")
+							disableAllTraining()
+						end
 
 						if LogOnNoFood then
 							if NoFoodNotify then
@@ -5717,66 +5705,48 @@ end
 			end
 		end
 	end)
-
-
-	local autoBuyEnabled = false
-local desiredQuantity = 12 -- Default value, can be set via slider
-
-
-local function walkToFoodLocation(foodName)
-    local targetPosition = foodLocations[foodName]
-    if targetPosition then
-        sleepWalk(targetPosition) -- or WalkTo(targetPosition)
-    else
-        warn("Food location not found for: " .. foodName)
-    end
-end
-
-local function purchaseFood(foodName, desiredQuantity)
-    local player = game:GetService("Players").LocalPlayer
-    local backpack = player.Backpack
-    local item = backpack:FindFirstChild(foodName)
-    local trainingSpot = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-
-    if item and item:FindFirstChild("Quantity") then
-        local currentQuantity = item.Quantity.Value
-        if currentQuantity < desiredQuantity then
-            walkToFoodLocation(foodName)
-            -- Simulate purchase logic here
-            -- Example: SimulateClick(purchaseButton)
-            while item.Quantity.Value < desiredQuantity do
-                task.wait(1) -- Wait until the desired quantity is reached
-            end
-        end
-    else
-        warn("Item not found in backpack: " .. foodName)
-    end
-
-    -- Navigate back to the training spot
-    sleepWalk(trainingSpot)
-    resumeTraining()
-end
-
-
-
-
-local function resumeTraining()
-    for i, v in pairs(trainingsTodo) do
-        v:SetState(true)
-    end
-    trainingsTodo = {}
-end
-
-
-
-risky:Toggle("Auto Buy Food", false, function(value)
-    autoBuyEnabled = value
-end)
-
-risky:Slider("Desired Quantity", { min = 1, max = 12, def = 12 }, function(value)
-    desiredQuantity = value
-end)
+	risky:Toggle("Auto Replenish Food", false, function(Value)
+		autoReplenishFood = Value
 	
+		if autoReplenishFood then
+			task.spawn(function()
+				while autoReplenishFood do
+					task.wait()
+					if CheckForFood() == false then
+						disableAllTraining()
+						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+						local foodLocations = {
+							Donut = Vector3.new(-1031, 54, -562),
+							Pancakes = Vector3.new(-1032, 53, -570),
+							Pie = Vector3.new(-1037, 53, -571),
+							Hamburger = Vector3.new(-1050, 52, -572),
+							Omelette = Vector3.new(-1050, 52, -572)
+						}
+						local desiredAmount = 12 -- You can set this to a user input value
+	
+						for foodName, position in pairs(foodLocations) do
+							WalkTo(position)
+							task.wait(0.5)
+							while game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName) == nil or
+								  game:GetService("Players").LocalPlayer.Backpack[foodName].Quantity.Value < desiredAmount do
+								fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
+								task.wait(0.5)
+							end
+						end
+	
+						WalkTo(originalPosition.Position)
+						task.wait(0.5)
+						for _, trainingToggle in pairs(trainingtoggles) do
+							trainingToggle:SetState(true)
+						end
+					end
+				end
+			end)
+		end
+	end)
+	risky:Slider("Desired Food Quantity", {min = 1, max = 12, def = 5}, function(Value)
+		desiredAmount = Value
+	end)
 	risky:Label("-- if supply job stop randomly use Point mag below -- ")
 
 	risky:Slider("Point Magnitude Til Next", { def = PointRangeTilNext, max = 30, min = 0 }, function(Value)
