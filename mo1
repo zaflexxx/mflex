@@ -5720,7 +5720,7 @@ local function MO(name)
 							Hamburger = Vector3.new(-1050, 52, -572),
 							Omelette = Vector3.new(-1050, 52, -572)
 						}
-						local desiredAmount = 1 -- You can set this to a user input value
+						local desiredAmount = 12 -- You can set this to a user input value
 	
 						for foodName, position in pairs(foodLocations) do
 							WalkTo(position)
@@ -5730,12 +5730,12 @@ local function MO(name)
 							
 							while true do
 								local foodItem = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName)
-								if foodItem and foodItem.Quantity.Value >= desiredAmount then
+								if foodItem and game.Players.LocalPlayer.Character:FindFirstChild(foodItem).Quantity.Value >= desiredAmount then
 									print("Bought enough of:", foodName)
 									webhook("Auto Replenish", "Bought enough " .. foodName)
 									break
 								else
-									print("Current quantity of", foodName, ":", foodItem and foodItem.Quantity.Value or 0)
+									print("Current quantity of", foodName, ":", foodName and game.Players.LocalPlayer.Character:FindFirstChild(foodName).Quantity.Value or 0)
 									task.wait(0.15)
 								end
 							end
