@@ -4966,15 +4966,12 @@ local function MO(name)
 		if autobuyitem then
 			local function GetClosestItem()
 				local foodsnear = {}
-				print("Checking for nearby foods...")
 	
 				for i, v in pairs(ItemTable) do
 					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-					print("Checking item:", v.Name, "Distance:", distance, "Max Activation Distance:", v.ClickDetector.MaxActivationDistance)
 	
 					if distance <= v.ClickDetector.MaxActivationDistance then
 						table.insert(foodsnear, v)
-						print("Item within range:", v.Name)
 					end
 				end
 	
@@ -4985,18 +4982,15 @@ local function MO(name)
 				local foodstobuy = GetClosestItem()
 	
 				if #foodstobuy > 0 then
-					print("Found", #foodstobuy, "items to buy.")
 					for i, v in pairs(foodstobuy) do
 						if not autobuyitem then
 							print("Auto buy stopped.")
 							return
 						end
-						print("Attempting to buy:", v.Name)
 						fireclickdetector(v.ClickDetector)
 						task.wait(0.15)
 					end
 				else
-					print("No items found within range.")
 				end
 			end
 		end
