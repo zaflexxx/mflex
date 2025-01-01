@@ -1748,7 +1748,7 @@ local function MO(name)
 	local function GetItemTable()
 		local tbl = {}
 
-		for i, v in pairs(workspace:GetChildren()) do
+		for i, v in pairs(workspace.Map:GetChildren()) do
 			if v:FindFirstChild("Shopnoid") then
 				local foodname = v.Name:split(":")[1]
 				if table.find(MOfoods, foodname) then
@@ -5665,42 +5665,6 @@ local function MO(name)
 	risky:Dropdown("Job Board", { "Convenience", "Japanese1" }, function(Value)
 		JobBoard = Value
 	end)
-	risky:Toggle("Auto Buy Foods Nearby", false, function(Value)
-		autobuyitem = Value
-
-		if autobuyitem then
-			local function GetClosestItem()
-				local foodsnear = {}
-
-				for i, v in pairs(ItemTable) do
-					if
-						(game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-						<= v.ClickDetector.MaxActivationDistance
-					then
-						table.insert(foodsnear, v)
-					end
-				end
-
-				return foodsnear
-			end
-
-			while autobuyitem and task.wait() do
-				local foodstobuy = GetClosestItem()
-
-				if autobuyitem and #GetClosestItem() > 0 then
-					for i, v in pairs(foodstobuy) do
-						if autobuyitem == false then
-							return
-						end
-						fireclickdetector(v.ClickDetector)
-						task.wait(0.15)
-					end
-				end
-			end
-		end
-	end)
-
-
 
 
 
