@@ -21,7 +21,7 @@ local Library = {}
 function Library:Window(winName,mainColor,hideBind)
     winName = winName or "brought to you by m1kecorp"
     mainColor = mainColor or Color3.fromRGB(104, 186, 227)
-    hideBind = hideBind or Enum.KeyCode.RightAlt
+    hideBind = hideBind or Enum.KeyCode.Z
 
     if _G.Library ~= nil then _G.Library:Destroy() end
     
@@ -1660,7 +1660,7 @@ local function MO(name)
 	local HRP = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 	local pathStatus = Enum.PathStatus
 	local player = game.Players.LocalPlayer
-	local autobuyitem = false
+	local autobuyitem = true
 	local itemselected = nil
 	local StopInCombat = false
 	local StopKnocked = false
@@ -1737,24 +1737,18 @@ local function MO(name)
 	}
 
 	local function CheckForFood()
-		if SelectedFood == nil then
-			return false
-		end
-		for i, v in pairs(recipes[SelectedFood]) do
-			if game.Players.LocalPlayer.Backpack:FindFirstChild(i) == nil then
-				return false
-			end
-			if game.Players.LocalPlayer.Backpack:FindFirstChild(i).Quantity.Value < v then
-				return false
+		for _, food in pairs(MOfoods) do
+			if game.Players.LocalPlayer.Backpack:FindFirstChild(food) then
+				return true
 			end
 		end
-		return true
+		return false
 	end
 
 	local function GetItemTable()
 		local tbl = {}
 
-		for i, v in pairs(workspace:GetChildren()) do
+		for i, v in pairs(workspace.Map:GetChildren()) do
 			if v:FindFirstChild("Shopnoid") then
 				local foodname = v.Name:split(":")[1]
 				if table.find(MOfoods, foodname) then
@@ -2377,14 +2371,25 @@ local function MO(name)
 
 	local lastBestTarget = nil
 
+	local lastExecution = 0
+	local cooldown = 2  -- Set cooldown time in seconds (adjust as needed)
+	
 	local function GetSSBuy()
+		local currentTime = tick()
+	
+		-- Prevent function from running too frequently
+		if currentTime - lastExecution < cooldown then
+			return nil
+		end
+	
+		lastExecution = currentTime  -- Update the time of last execution
+	
 		local bestdistance, ss = nil, nil
 		local ssinstances = {
 			workspace.Map,
-			workspace,
 			workspace.kUREtRAINER,
 		}
-
+	
 		for _, instance in pairs(ssinstances) do
 			for i, v in pairs(instance:GetChildren()) do
 				if v.Name:find("Strike Speed Training") or v:FindFirstChild("Strike Speed Training: $180") then
@@ -2393,7 +2398,7 @@ local function MO(name)
 					end
 					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
 					local MaxActivationDist = v.ClickDetector.MaxActivationDistance
-
+	
 					if distance <= MaxActivationDist then
 						if bestdistance == nil and ss == nil then
 							bestdistance = distance
@@ -2406,9 +2411,10 @@ local function MO(name)
 				end
 			end
 		end
-
+	
 		return ss
 	end
+	
 	local function ChargeRhythm(combatTool)
 		if not RhythmToggle then
 			return
@@ -3469,7 +3475,7 @@ local function MO(name)
 	local function GetDuraBuy()
 		local bestdistance, durabuy = nil, nil
 		local durainstances = {
-			workspace,
+			workspace.Map,
 			workspace.kUREtRAINER,
 		}
 
@@ -3501,9 +3507,11 @@ local function MO(name)
 
 	local function duraturn(main, support)
 		if durability == false then
+			print("Durability is set to false, exiting duraturn.")
 			return
 		end
 		if main.Character.Humanoid.Health < main.Character.Humanoid.MaxHealth then
+			print("Waiting for main character to heal.")
 			repeat
 				task.wait()
 			until main.Character.Humanoid.Health >= main.Character.Humanoid.MaxHealth
@@ -3513,9 +3521,11 @@ local function MO(name)
 			main.Character.HumanoidRootPart.Position - support.Character.HumanoidRootPart.Position
 		).Magnitude
 		if GetDuraBuy() == nil and SkillXP == false then
+			print("No DuraBuy found and SkillXP is false, exiting duraturn.")
 			return
 		end
 		if distancebetweenplrs > 17 and distancebetweenplrs <= 200 then
+			print("Players are too far apart, waiting to get closer.")
 			repeat
 				local newdistancebetweenplayers = (
 					main.Character.HumanoidRootPart.Position - support.Character.HumanoidRootPart.Position
@@ -3525,44 +3535,46 @@ local function MO(name)
 			task.wait(0.5)
 		end
 		local mychar = game.Players.LocalPlayer.Character
-
+	
 		if support.Character.Name == mychar.Name and durability then
+			print("Support character is the local player.")
 			if not SkillXP then
+				print("Starting durability training.")
 				repeat
 					task.wait()
 				until main.Character:FindFirstChild("DuraTrain") or durability == false
-
+	
 				local combatTool = GetStyle()
 				local IsCombatEquipped = true
 				pcall(function()
 					local DaCustomTool = game.Players.LocalPlayer.Backpack:FindFirstChild(DuraTool)
 						or game.Players.LocalPlayer.Character:FindFirstChild(DuraTool)
 						or "None"
-
+	
 					if DaCustomTool == nil or DaCustomTool == "None" then
-						print("USING Default")
+						print("Using default tool.")
 						IsCombatEquipped = false
 					else
-						print("USING ", DaCustomTool)
+						print("Using custom tool: ", DaCustomTool)
 						combatTool = DaCustomTool
 					end
 				end)
-
+	
 				if combatTool.Parent == game.Players.LocalPlayer.Backpack and durability then
 					game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
 					task.wait(0.1)
 					game.Players.LocalPlayer.Character.Humanoid:EquipTool(combatTool)
 					task.wait(0.1)
 				end
-
+	
 				repeat
 					local healthpercent = (main.Character.Humanoid.Health / main.Character.Humanoid.MaxHealth) * 100
-
+	
 					if healthpercent > stopAtHP and durability and main.Character:FindFirstChild("DuraTrain") then
 						if durability and RhythmToggle and IsCombatEquipped then
 							ChargeRhythm(combatTool)
 						end
-
+	
 						if
 							combatTool.Parent == game.Players.LocalPlayer.Character
 							and main.Character:FindFirstChild("DuraTrain")
@@ -3580,7 +3592,7 @@ local function MO(name)
 						game.Players.LocalPlayer.Character.Humanoid:EquipTool(combatTool)
 						task.wait(0.1)
 					end
-
+	
 					task.wait()
 				until healthpercent <= stopAtHP and main.Character:FindFirstChild("DuraTrain") == nil
 					or durability == false
@@ -3588,10 +3600,11 @@ local function MO(name)
 				game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
 				task.wait(0.9)
 			else
+				print("Skill XP mode is enabled.")
 				repeat
 					local SkillTool, SkillHotbar = GetSkill()
 					local healthpercent = (main.Character.Humanoid.Health / main.Character.Humanoid.MaxHealth) * 100
-
+	
 					if healthpercent > stopAtHP and SkillTool ~= nil and SkillHotbar ~= nil then
 						if SkillTool.Parent == game.Players.LocalPlayer.Character and not SkillHotbar.CD.Visible then
 							SkillTool:Activate()
@@ -3618,17 +3631,18 @@ local function MO(name)
 				task.wait(0.9)
 			end
 		elseif main.Character.Name == mychar.Name and durability then
+			print("Main character is the local player.")
 			if not SkillXP then
 				local Dura = GetDuraBuy()
 				local BeforeDuraDonePos
-
+	
 				if main.Character.Humanoid.Health < main.Character.Humanoid.MaxHealth then
 					repeat
 						task.wait()
 					until main.Character.Humanoid.Health >= main.Character.Humanoid.MaxHealth
 					task.wait(0.5)
 				end
-
+	
 				if game.Players.LocalPlayer.Character:FindFirstChild("DuraTrain") == nil and durability then
 					if game.Players.LocalPlayer.Backpack:FindFirstChild("Durability Training") and durability then
 						game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
@@ -3647,7 +3661,7 @@ local function MO(name)
 							fireclickdetector(Dura.ClickDetector)
 							task.wait(1)
 						until game.Players.LocalPlayer.Backpack:FindFirstChild("Durability Training")
-
+	
 						game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
 						task.wait(0.1)
 						game.Players.LocalPlayer.Character.Humanoid:EquipTool(
@@ -3658,16 +3672,16 @@ local function MO(name)
 						task.wait(0.1)
 					end
 				end
-
+	
 				BeforeDuraDonePos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-
+	
 				repeat
 					local healthpercent = (
 						game.Players.LocalPlayer.Character.Humanoid.Health
 						/ game.Players.LocalPlayer.Character.Humanoid.MaxHealth
 					) * 100
 					task.wait()
-
+	
 					if healthpercent <= stopAtHP then
 						repeat
 							game.Players.LocalPlayer.Character:FindFirstChild("Durability Training"):Activate()
@@ -3675,16 +3689,16 @@ local function MO(name)
 						until game.Players.LocalPlayer.Character:FindFirstChild("Durability Training") == nil
 							or game.Players.LocalPlayer.Character:FindFirstChild("DuraTrain") == nil
 					end
-
+	
 				until healthpercent <= stopAtHP
 						and game.Players.LocalPlayer.Character:FindFirstChild("DuraTrain") == nil
 					or durability == false
-
+	
 				task.wait(1)
-
+	
 				if AutoWalkAfterPushedBack then
 					local distance = (BeforeDuraDonePos - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
+	
 					if distance > 2 then
 						game.Players.LocalPlayer.Character.Humanoid:MoveTo(BeforeDuraDonePos)
 						game.Players.LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
@@ -3701,7 +3715,7 @@ local function MO(name)
 			end
 		end
 	end
-
+	
 	local function debuffCheck()
 		if game.Players.LocalPlayer.Character.Ragdolled.Value == true then
 			return false
@@ -4956,34 +4970,41 @@ local function MO(name)
 
 	misc:Toggle("Auto Buy Foods Nearby", false, function(Value)
 		autobuyitem = Value
-
+	
 		if autobuyitem then
 			local function GetClosestItem()
 				local foodsnear = {}
-
+				print("Checking for nearby foods...")
+	
 				for i, v in pairs(ItemTable) do
-					if
-						(game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-						<= v.ClickDetector.MaxActivationDistance
-					then
+					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
+					print("Checking item:", v.Name, "Distance:", distance, "Max Activation Distance:", v.ClickDetector.MaxActivationDistance)
+	
+					if distance <= v.ClickDetector.MaxActivationDistance then
 						table.insert(foodsnear, v)
+						print("Item within range:", v.Name)
 					end
 				end
-
+	
 				return foodsnear
 			end
-
+	
 			while autobuyitem and task.wait() do
 				local foodstobuy = GetClosestItem()
-
-				if autobuyitem and #GetClosestItem() > 0 then
+	
+				if #foodstobuy > 0 then
+					print("Found", #foodstobuy, "items to buy.")
 					for i, v in pairs(foodstobuy) do
-						if autobuyitem == false then
+						if not autobuyitem then
+							print("Auto buy stopped.")
 							return
 						end
+						print("Attempting to buy:", v.Name)
 						fireclickdetector(v.ClickDetector)
 						task.wait(0.15)
 					end
+				else
+					print("No items found within range.")
 				end
 			end
 		end
@@ -5659,173 +5680,76 @@ local function MO(name)
 	risky:Dropdown("Job Board", { "Convenience", "Japanese1" }, function(Value)
 		JobBoard = Value
 	end)
-	risky:Toggle("Auto Buy Foods Nearby", false, function(Value)
-		autobuyitem = Value
 
-		if autobuyitem then
-			local function GetClosestItem()
-				local foodsnear = {}
 
-				for i, v in pairs(ItemTable) do
-					if
-						(game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-						<= v.ClickDetector.MaxActivationDistance
-					then
-						table.insert(foodsnear, v)
+
+
+	risky:Toggle("Auto Replenish Food", false, function(Value)
+		autoReplenishFood = Value
+	
+		if autoReplenishFood then
+			task.spawn(function()
+				local activeToggles = {}
+	
+				-- Store the state of active training toggles
+				for _, trainingToggle in pairs(trainingtoggles) do
+					if trainingToggle:GetState() then
+						table.insert(activeToggles, trainingToggle)
+						trainingToggle:SetState(false) -- Disable them temporarily
 					end
 				end
-
-				return foodsnear
-			end
-
-			while autobuyitem and task.wait() do
-				local foodstobuy = GetClosestItem()
-
-				if autobuyitem and #GetClosestItem() > 0 then
-					for i, v in pairs(foodstobuy) do
-						if autobuyitem == false then
-							return
+	
+				while autoReplenishFood do
+					task.wait()
+					if not CheckForFood() then
+						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
+	
+						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+						local foodLocations = {
+							Donut = Vector3.new(-1031, 54, -562),
+							Pancakes = Vector3.new(-1032, 53, -570),
+							Pie = Vector3.new(-1037, 53, -571),
+							Hamburger = Vector3.new(-1050, 52, -572),
+							Omelette = Vector3.new(-1050, 52, -572)
+						}
+						local desiredAmount = 5 -- Default value, overridden by user slider
+	
+						for foodName, position in pairs(foodLocations) do
+							webhook("Auto Replenish", "Heading to buy " .. foodName)
+							WalkTo(position)
+							task.wait(0.5)
+							webhook("Auto Replenish", "Buying " .. foodName)
+	
+							while true do
+								local foodItem = game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(foodName)
+								local currentQuantity = foodItem and foodItem.Quantity.Value or 0
+	
+								if currentQuantity >= desiredAmount then
+									webhook("Auto Replenish", "Bought enough " .. foodName)
+									break
+								else
+									task.wait(0.15)
+								end
+							end
+							webhook("Auto Replenish", "Moving to the next food on the list.")
 						end
-						fireclickdetector(v.ClickDetector)
-						task.wait(0.15)
+	
+						webhook("Auto Replenish", "Returning to original position.")
+						WalkTo(originalPosition.Position)
+						task.wait(0.5)
+						webhook("Auto Replenish", "Resuming training.")
+	
+						-- Restore the state of active training toggles
+						for _, trainingToggle in pairs(activeToggles) do
+							trainingToggle:SetState(true)
+						end
 					end
 				end
-			end
+			end)
 		end
 	end)
-
-	local PathfindingService = game:GetService("PathfindingService")
-	local Players = game:GetService("Players")
-	local player = Players.LocalPlayer
-	
-	-- Add slider for setting quantity to check before buying
-	local PathfindingService = game:GetService("PathfindingService")
-	local Players = game:GetService("Players")
-	local player = Players.LocalPlayer
-	local HRP = player.Character:WaitForChild("HumanoidRootPart")
-	
-	local MOfoods = {
-		"Donut", "Coffee", "Bagel", "EZ Taco", "Omelette", "Hotdog", "Pancakes", "Tofu Beef Soup",
-		"Pie", "Tokito Sake", "Hamburger", "Chicken Fries", "Ramen"
-	}
-	
-	local foodDistances = {}
-	local macroSpot = HRP.Position
-	local quantityToCheck = 8 -- Default value, will be updated via the slider
-	local autoWalkEnabled = false
-	
-	-- Update food distances
-	local function UpdateFoodDistances()
-		foodDistances = {}
-		for _, foodName in ipairs(MOfoods) do
-			for _, obj in pairs(workspace:GetDescendants()) do
-				if obj.Name:split(":")[1] == foodName and obj:FindFirstChild("ClickDetector") then
-					local targetPart = obj:FindFirstChild("Head") or obj:FindFirstChild("PrimaryPart") or obj:FindFirstChildWhichIsA("BasePart")
-					if targetPart then
-						local distance = (targetPart.Position - HRP.Position).Magnitude
-						table.insert(foodDistances, {name = foodName, object = obj, distance = distance})
-					end
-				end
-			end
-		end
-		table.sort(foodDistances, function(a, b)
-			return a.distance < b.distance
-		end)
-	end
-	
-	-- Check if the player has a certain quantity of food
-	local function CheckFoodQuantity(foodName)
-		local quantity = 0
-		for _, item in pairs(player.Backpack:GetChildren()) do
-			if item.Name == foodName and item:FindFirstChild("Quantity") then
-				quantity = item.Quantity.Value
-				break
-			end
-		end
-		return quantity
-	end
-	
-	-- Check if all foods have reached the target quantity
-	local function AllFoodsAtTarget()
-		for _, foodName in ipairs(MOfoods) do
-			if CheckFoodQuantity(foodName) < quantityToCheck then
-				return false
-			end
-		end
-		return true
-	end
-	
-	-- Function to compute path and move to target
-	local function MoveToTarget(targetPosition)
-		local path = PathfindingService:CreatePath({
-			AgentRadius = 2,
-			AgentHeight = 5,
-			AgentCanJump = true,
-			AgentJumpHeight = 7,
-			AgentMaxSlope = 45,
-		})
-	
-		local success, errorMessage = pcall(function()
-			path:ComputeAsync(HRP.Position, targetPosition)
-		end)
-	
-		if not success then
-			warn("Failed to compute path: " .. errorMessage)
-			return
-		end
-	
-		for _, waypoint in ipairs(path:GetWaypoints()) do
-			player.Character.Humanoid:MoveTo(waypoint.Position)
-			player.Character.Humanoid.MoveToFinished:Wait()
-		end
-	end
-	
-	-- Main loop to walk to food and check quantities
-	local function AutoWalkToFoodSpots()
-		while autoWalkEnabled do
-			if AllFoodsAtTarget() then
-				print("All foods at target quantity. Returning to macro spot...")
-				MoveToTarget(macroSpot)
-				print("Returned to macro spot.")
-				break
-			else
-				UpdateFoodDistances()
-				for _, foodData in ipairs(foodDistances) do
-					local foodName = foodData.name
-					local targetPart = foodData.object:FindFirstChild("Head") or foodData.object:FindFirstChild("PrimaryPart") or foodData.object:FindFirstChildWhichIsA("BasePart")
-					if targetPart then
-						print("Moving to target position: " .. tostring(targetPart.Position))
-						MoveToTarget(targetPart.Position)
-						local quantity = CheckFoodQuantity(foodName)
-						print(foodName .. " quantity: " .. quantity)
-						repeat
-							wait(1)
-							quantity = CheckFoodQuantity(foodName)
-							print(foodName .. " quantity: " .. quantity)
-						until quantity >= quantityToCheck
-						print(foodName .. " has reached the target quantity.")
-					else
-						print("Could not find target part for food: " .. foodName)
-					end
-				end
-			end
-			wait(5)
-		end
-	end
-	
-	-- Slider for setting quantity to check before buying
-	risky:Slider("Food Quantity to Check Before Buying", { def = quantityToCheck, max = 12, min = 1 }, function(Value)
-		quantityToCheck = Value
-	end)
-	
-	-- Toggle for Auto Walk to Food Spots
-	risky:Toggle("Auto Walk to Food Spots", false, function(Value)
-		autoWalkEnabled = Value
-		if Value then
-			AutoWalkToFoodSpots()
-		else
-			print("Auto Walk to Food Spots turned off.")
-		end
+	risky:Slider("Desired Food Quantity", {min = 1, max = 12, def = 5}, function(Value)
+		desiredAmount = Value
 	end)
 	
 	risky:Label("-- if supply job stop randomly use Point mag below -- ")
@@ -6627,7 +6551,7 @@ local GameList = {
         UIConfig = RevengersDos,
     },
     ["Mighty Omega"] = {
-        PlaceIds = {4878988249,16225367431,6320657368},
+        PlaceIds = {4878988249,16225367431,6320657368, 12355185014, 1663370770},
         UIConfig = MO,
     },
     ["Tatakai: Remastered"] = {
@@ -6751,7 +6675,7 @@ if not folder then
 end
 
 local hideuibind
-hideuibind = settings:Bind("Hide GUI",Enum.KeyCode.RightAlt,function()
+hideuibind = settings:Bind("Hide GUI",Enum.KeyCode.Z,function()
     win.ToggleVisiblity()
 end)
 
