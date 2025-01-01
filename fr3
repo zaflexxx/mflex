@@ -5697,23 +5697,24 @@ end)
 
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
-	
+
 		if autoReplenishFood then
 			task.spawn(function()
 				local activeToggles = {}
 	
-				-- Store the state of active training toggles
-				for _, trainingToggle in pairs(trainingtoggles) do
-					if trainingToggle:GetState() then
-						table.insert(activeToggles, trainingToggle)
-						trainingToggle:SetState(false) -- Disable them temporarily
-					end
-				end
-	
 				while autoReplenishFood do
 					task.wait()
 					if not CheckForFood() then
+						-- Store the state of active training toggles
+						for _, trainingToggle in pairs(trainingtoggles) do
+							if trainingToggle:GetState() then
+								table.insert(activeToggles, trainingToggle)
+								trainingToggle:SetState(false) -- Disable them temporarily
+							end
+						end
+	
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
+	
 	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
 						local foodLocations = {
