@@ -3715,7 +3715,7 @@ local function MO(name)
 			end
 		end
 	end
-	
+
 	local function debuffCheck()
 		if game.Players.LocalPlayer.Character.Ragdolled.Value == true then
 			return false
@@ -4361,53 +4361,64 @@ local function MO(name)
 	main:Label("-- make sure both accs have same settings --")
 	main:Label("you need 2 accounts that are using the script")
 
-	trainingtoggles[#trainingtoggles + 1] = main:Toggle("Durability", false, function(Value)
-		durability = Value
+	-- Add debugging prints in the durability toggle function
+trainingtoggles[#trainingtoggles + 1] = main:Toggle("Durability", false, function(Value)
+    durability = Value
+    print("Durability set to:", durability) -- Debugging print
 
-		while task.wait() and durability do
-			if ft ~= nil and st ~= nil and durability then
-				if game.Players.LocalPlayer.Name == ft or game.Players.LocalPlayer.Name == st and durability then
-					local ftplr = game.Players:FindFirstChild(ft)
-					local stplr = game.Players:FindFirstChild(st)
+    while task.wait() and durability do
+        if ft ~= nil and st ~= nil and durability then
+            if game.Players.LocalPlayer.Name == ft or game.Players.LocalPlayer.Name == st and durability then
+                local ftplr = game.Players:FindFirstChild(ft)
+                local stplr = game.Players:FindFirstChild(st)
 
-					if ftplr.Character ~= nil and stplr.Character ~= nil and not durainprogress and durability then
-						local distancebetweenplrs = (
-							ftplr.Character.HumanoidRootPart.Position - stplr.Character.HumanoidRootPart.Position
-						).Magnitude
+                if ftplr.Character ~= nil and stplr.Character ~= nil and not durainprogress and durability then
+                    local distancebetweenplrs = (
+                        ftplr.Character.HumanoidRootPart.Position - stplr.Character.HumanoidRootPart.Position
+                    ).Magnitude
 
-						if
-							distancebetweenplrs <= 10 and GetDuraBuy() ~= nil
-							or SkillXP and distancebetweenplrs <= 10
-						then
-							maintenancechecks()
-							durainprogress = true
-							if taketurns then
-								repeat
-									task.wait()
-								until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
-									or durability == false
-								duraturn(ftplr, stplr)
-								task.wait()
-								repeat
-									task.wait()
-								until stplr.Character.Humanoid.Health >= stplr.Character.Humanoid.MaxHealth
-									or durability == false
-								duraturn(stplr, ftplr)
-							else
-								repeat
-									task.wait()
-								until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
-									or durability == false
+                    print("Distance between players:", distancebetweenplrs) -- Debugging print
 
-								duraturn(ftplr, stplr)
-							end
-							durainprogress = false
-						end
-					end
-				end
-			end
-		end
-	end)
+                    if distancebetweenplrs <= 10 and GetDuraBuy() ~= nil or SkillXP and distancebetweenplrs <= 10 then
+                        maintenancechecks()
+                        durainprogress = true
+                        print("Starting durability turn...") -- Debugging print
+                        if taketurns then
+                            repeat
+                                task.wait()
+                            until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
+                                or durability == false
+                            duraturn(ftplr, stplr)
+                            task.wait()
+                            repeat
+                                task.wait()
+                            until stplr.Character.Humanoid.Health >= stplr.Character.Humanoid.MaxHealth
+                                or durability == false
+                            duraturn(stplr, ftplr)
+                        else
+                            repeat
+                                task.wait()
+                            until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
+                                or durability == false
+
+                            duraturn(ftplr, stplr)
+                        end
+                        durainprogress = false
+                        print("Durability turn completed.") -- Debugging print
+                    else
+                        print("Players are too far apart or no DuraBuy found.") -- Debugging print
+                    end
+                else
+                    print("Character not found or already in progress.") -- Debugging print
+                end
+            else
+                print("Local player is not in the turn list.") -- Debugging print
+            end
+        else
+            print("First turn or second turn player not set.") -- Debugging print
+        end
+    end
+end)
 
 	main:Textbox("First Turn", function(txt)
 		ft = txt
