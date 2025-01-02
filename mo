@@ -3507,9 +3507,11 @@ local function MO(name)
 
 	local function duraturn(main, support)
 		if durability == false then
+			print("Durability is set to false, exiting duraturn.")
 			return
 		end
 		if main.Character.Humanoid.Health < main.Character.Humanoid.MaxHealth then
+			print("Waiting for main character to heal.")
 			repeat
 				task.wait()
 			until main.Character.Humanoid.Health >= main.Character.Humanoid.MaxHealth
@@ -3519,9 +3521,11 @@ local function MO(name)
 			main.Character.HumanoidRootPart.Position - support.Character.HumanoidRootPart.Position
 		).Magnitude
 		if GetDuraBuy() == nil and SkillXP == false then
+			print("No DuraBuy found and SkillXP is false, exiting duraturn.")
 			return
 		end
 		if distancebetweenplrs > 17 and distancebetweenplrs <= 200 then
+			print("Players are too far apart, waiting to get closer.")
 			repeat
 				local newdistancebetweenplayers = (
 					main.Character.HumanoidRootPart.Position - support.Character.HumanoidRootPart.Position
@@ -3531,44 +3535,46 @@ local function MO(name)
 			task.wait(0.5)
 		end
 		local mychar = game.Players.LocalPlayer.Character
-
+	
 		if support.Character.Name == mychar.Name and durability then
+			print("Support character is the local player.")
 			if not SkillXP then
+				print("Starting durability training.")
 				repeat
 					task.wait()
 				until main.Character:FindFirstChild("DuraTrain") or durability == false
-
+	
 				local combatTool = GetStyle()
 				local IsCombatEquipped = true
 				pcall(function()
 					local DaCustomTool = game.Players.LocalPlayer.Backpack:FindFirstChild(DuraTool)
 						or game.Players.LocalPlayer.Character:FindFirstChild(DuraTool)
 						or "None"
-
+	
 					if DaCustomTool == nil or DaCustomTool == "None" then
-						print("USING Default")
+						print("Using default tool.")
 						IsCombatEquipped = false
 					else
-						print("USING ", DaCustomTool)
+						print("Using custom tool: ", DaCustomTool)
 						combatTool = DaCustomTool
 					end
 				end)
-
+	
 				if combatTool.Parent == game.Players.LocalPlayer.Backpack and durability then
 					game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
 					task.wait(0.1)
 					game.Players.LocalPlayer.Character.Humanoid:EquipTool(combatTool)
 					task.wait(0.1)
 				end
-
+	
 				repeat
 					local healthpercent = (main.Character.Humanoid.Health / main.Character.Humanoid.MaxHealth) * 100
-
+	
 					if healthpercent > stopAtHP and durability and main.Character:FindFirstChild("DuraTrain") then
 						if durability and RhythmToggle and IsCombatEquipped then
 							ChargeRhythm(combatTool)
 						end
-
+	
 						if
 							combatTool.Parent == game.Players.LocalPlayer.Character
 							and main.Character:FindFirstChild("DuraTrain")
@@ -3586,7 +3592,7 @@ local function MO(name)
 						game.Players.LocalPlayer.Character.Humanoid:EquipTool(combatTool)
 						task.wait(0.1)
 					end
-
+	
 					task.wait()
 				until healthpercent <= stopAtHP and main.Character:FindFirstChild("DuraTrain") == nil
 					or durability == false
@@ -3594,10 +3600,11 @@ local function MO(name)
 				game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
 				task.wait(0.9)
 			else
+				print("Skill XP mode is enabled.")
 				repeat
 					local SkillTool, SkillHotbar = GetSkill()
 					local healthpercent = (main.Character.Humanoid.Health / main.Character.Humanoid.MaxHealth) * 100
-
+	
 					if healthpercent > stopAtHP and SkillTool ~= nil and SkillHotbar ~= nil then
 						if SkillTool.Parent == game.Players.LocalPlayer.Character and not SkillHotbar.CD.Visible then
 							SkillTool:Activate()
@@ -3624,17 +3631,18 @@ local function MO(name)
 				task.wait(0.9)
 			end
 		elseif main.Character.Name == mychar.Name and durability then
+			print("Main character is the local player.")
 			if not SkillXP then
 				local Dura = GetDuraBuy()
 				local BeforeDuraDonePos
-
+	
 				if main.Character.Humanoid.Health < main.Character.Humanoid.MaxHealth then
 					repeat
 						task.wait()
 					until main.Character.Humanoid.Health >= main.Character.Humanoid.MaxHealth
 					task.wait(0.5)
 				end
-
+	
 				if game.Players.LocalPlayer.Character:FindFirstChild("DuraTrain") == nil and durability then
 					if game.Players.LocalPlayer.Backpack:FindFirstChild("Durability Training") and durability then
 						game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
@@ -3653,7 +3661,7 @@ local function MO(name)
 							fireclickdetector(Dura.ClickDetector)
 							task.wait(1)
 						until game.Players.LocalPlayer.Backpack:FindFirstChild("Durability Training")
-
+	
 						game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
 						task.wait(0.1)
 						game.Players.LocalPlayer.Character.Humanoid:EquipTool(
@@ -3664,16 +3672,16 @@ local function MO(name)
 						task.wait(0.1)
 					end
 				end
-
+	
 				BeforeDuraDonePos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-
+	
 				repeat
 					local healthpercent = (
 						game.Players.LocalPlayer.Character.Humanoid.Health
 						/ game.Players.LocalPlayer.Character.Humanoid.MaxHealth
 					) * 100
 					task.wait()
-
+	
 					if healthpercent <= stopAtHP then
 						repeat
 							game.Players.LocalPlayer.Character:FindFirstChild("Durability Training"):Activate()
@@ -3681,16 +3689,16 @@ local function MO(name)
 						until game.Players.LocalPlayer.Character:FindFirstChild("Durability Training") == nil
 							or game.Players.LocalPlayer.Character:FindFirstChild("DuraTrain") == nil
 					end
-
+	
 				until healthpercent <= stopAtHP
 						and game.Players.LocalPlayer.Character:FindFirstChild("DuraTrain") == nil
 					or durability == false
-
+	
 				task.wait(1)
-
+	
 				if AutoWalkAfterPushedBack then
 					local distance = (BeforeDuraDonePos - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
+	
 					if distance > 2 then
 						game.Players.LocalPlayer.Character.Humanoid:MoveTo(BeforeDuraDonePos)
 						game.Players.LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
@@ -3707,7 +3715,6 @@ local function MO(name)
 			end
 		end
 	end
-
 	local function debuffCheck()
 		if game.Players.LocalPlayer.Character.Ragdolled.Value == true then
 			return false
@@ -4353,26 +4360,35 @@ local function MO(name)
 	main:Label("-- make sure both accs have same settings --")
 	main:Label("you need 2 accounts that are using the script")
 
+	-- Add debugging prints in the durability toggle function
 	trainingtoggles[#trainingtoggles + 1] = main:Toggle("Durability", false, function(Value)
 		durability = Value
-
+		print("Durability set to:", durability) -- Debugging print
+	
+		-- Reset any ongoing durability sessions
+		if not durability then
+			durainprogress = false
+			print("Durability turned off, resetting session.") -- Debugging print
+			return
+		end
+	
 		while task.wait() and durability do
 			if ft ~= nil and st ~= nil and durability then
 				if game.Players.LocalPlayer.Name == ft or game.Players.LocalPlayer.Name == st and durability then
 					local ftplr = game.Players:FindFirstChild(ft)
 					local stplr = game.Players:FindFirstChild(st)
-
+	
 					if ftplr.Character ~= nil and stplr.Character ~= nil and not durainprogress and durability then
 						local distancebetweenplrs = (
 							ftplr.Character.HumanoidRootPart.Position - stplr.Character.HumanoidRootPart.Position
 						).Magnitude
-
-						if
-							distancebetweenplrs <= 10 and GetDuraBuy() ~= nil
-							or SkillXP and distancebetweenplrs <= 10
-						then
+	
+						print("Distance between players:", distancebetweenplrs) -- Debugging print
+	
+						if distancebetweenplrs <= 10 and GetDuraBuy() ~= nil or SkillXP and distancebetweenplrs <= 10 then
 							maintenancechecks()
 							durainprogress = true
+							print("Starting durability turn...") -- Debugging print
 							if taketurns then
 								repeat
 									task.wait()
@@ -4390,17 +4406,25 @@ local function MO(name)
 									task.wait()
 								until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
 									or durability == false
-
+	
 								duraturn(ftplr, stplr)
 							end
 							durainprogress = false
+							print("Durability turn completed.") -- Debugging print
+						else
+							print("Players are too far apart or no DuraBuy found.") -- Debugging print
 						end
+					else
+						print("Character not found or already in progress.") -- Debugging print
 					end
+				else
+					print("Local player is not in the turn list.") -- Debugging print
 				end
+			else
+				print("First turn or second turn player not set.") -- Debugging print
 			end
 		end
 	end)
-
 	main:Textbox("First Turn", function(txt)
 		ft = txt
 	end)
@@ -4966,12 +4990,15 @@ local function MO(name)
 		if autobuyitem then
 			local function GetClosestItem()
 				local foodsnear = {}
+				print("Checking for nearby foods...")
 	
 				for i, v in pairs(ItemTable) do
 					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
+					print("Checking item:", v.Name, "Distance:", distance, "Max Activation Distance:", v.ClickDetector.MaxActivationDistance)
 	
 					if distance <= v.ClickDetector.MaxActivationDistance then
 						table.insert(foodsnear, v)
+						print("Item within range:", v.Name)
 					end
 				end
 	
@@ -4982,15 +5009,18 @@ local function MO(name)
 				local foodstobuy = GetClosestItem()
 	
 				if #foodstobuy > 0 then
+					print("Found", #foodstobuy, "items to buy.")
 					for i, v in pairs(foodstobuy) do
 						if not autobuyitem then
 							print("Auto buy stopped.")
 							return
 						end
+						print("Attempting to buy:", v.Name)
 						fireclickdetector(v.ClickDetector)
 						task.wait(0.15)
 					end
 				else
+					print("No items found within range.")
 				end
 			end
 		end
@@ -5672,23 +5702,24 @@ local function MO(name)
 
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
-	
+
 		if autoReplenishFood then
 			task.spawn(function()
 				local activeToggles = {}
 	
-				-- Store the state of active training toggles
-				for _, trainingToggle in pairs(trainingtoggles) do
-					if trainingToggle:GetState() then
-						table.insert(activeToggles, trainingToggle)
-						trainingToggle:SetState(false) -- Disable them temporarily
-					end
-				end
-	
 				while autoReplenishFood do
 					task.wait()
 					if not CheckForFood() then
+						-- Store the state of active training toggles
+						for _, trainingToggle in pairs(trainingtoggles) do
+							if trainingToggle:GetState() then
+								table.insert(activeToggles, trainingToggle)
+								trainingToggle:SetState(false) -- Disable them temporarily
+							end
+						end
+	
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
+	
 	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
 						local foodLocations = {
