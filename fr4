@@ -3715,7 +3715,6 @@ local function MO(name)
 			end
 		end
 	end
-
 	local function debuffCheck()
 		if game.Players.LocalPlayer.Character.Ragdolled.Value == true then
 			return false
@@ -4362,64 +4361,70 @@ local function MO(name)
 	main:Label("you need 2 accounts that are using the script")
 
 	-- Add debugging prints in the durability toggle function
-trainingtoggles[#trainingtoggles + 1] = main:Toggle("Durability", false, function(Value)
-    durability = Value
-    print("Durability set to:", durability) -- Debugging print
-
-    while task.wait() and durability do
-        if ft ~= nil and st ~= nil and durability then
-            if game.Players.LocalPlayer.Name == ft or game.Players.LocalPlayer.Name == st and durability then
-                local ftplr = game.Players:FindFirstChild(ft)
-                local stplr = game.Players:FindFirstChild(st)
-
-                if ftplr.Character ~= nil and stplr.Character ~= nil and not durainprogress and durability then
-                    local distancebetweenplrs = (
-                        ftplr.Character.HumanoidRootPart.Position - stplr.Character.HumanoidRootPart.Position
-                    ).Magnitude
-
-                    print("Distance between players:", distancebetweenplrs) -- Debugging print
-
-                    if distancebetweenplrs <= 10 and GetDuraBuy() ~= nil or SkillXP and distancebetweenplrs <= 10 then
-                        maintenancechecks()
-                        durainprogress = true
-                        print("Starting durability turn...") -- Debugging print
-                        if taketurns then
-                            repeat
-                                task.wait()
-                            until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
-                                or durability == false
-                            duraturn(ftplr, stplr)
-                            task.wait()
-                            repeat
-                                task.wait()
-                            until stplr.Character.Humanoid.Health >= stplr.Character.Humanoid.MaxHealth
-                                or durability == false
-                            duraturn(stplr, ftplr)
-                        else
-                            repeat
-                                task.wait()
-                            until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
-                                or durability == false
-
-                            duraturn(ftplr, stplr)
-                        end
-                        durainprogress = false
-                        print("Durability turn completed.") -- Debugging print
-                    else
-                        print("Players are too far apart or no DuraBuy found.") -- Debugging print
-                    end
-                else
-                    print("Character not found or already in progress.") -- Debugging print
-                end
-            else
-                print("Local player is not in the turn list.") -- Debugging print
-            end
-        else
-            print("First turn or second turn player not set.") -- Debugging print
-        end
-    end
-end)
-
+	trainingtoggles[#trainingtoggles + 1] = main:Toggle("Durability", false, function(Value)
+		durability = Value
+		print("Durability set to:", durability) -- Debugging print
+	
+		-- Reset any ongoing durability sessions
+		if not durability then
+			durainprogress = false
+			print("Durability turned off, resetting session.") -- Debugging print
+			return
+		end
+	
+		while task.wait() and durability do
+			if ft ~= nil and st ~= nil and durability then
+				if game.Players.LocalPlayer.Name == ft or game.Players.LocalPlayer.Name == st and durability then
+					local ftplr = game.Players:FindFirstChild(ft)
+					local stplr = game.Players:FindFirstChild(st)
+	
+					if ftplr.Character ~= nil and stplr.Character ~= nil and not durainprogress and durability then
+						local distancebetweenplrs = (
+							ftplr.Character.HumanoidRootPart.Position - stplr.Character.HumanoidRootPart.Position
+						).Magnitude
+	
+						print("Distance between players:", distancebetweenplrs) -- Debugging print
+	
+						if distancebetweenplrs <= 10 and GetDuraBuy() ~= nil or SkillXP and distancebetweenplrs <= 10 then
+							maintenancechecks()
+							durainprogress = true
+							print("Starting durability turn...") -- Debugging print
+							if taketurns then
+								repeat
+									task.wait()
+								until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
+									or durability == false
+								duraturn(ftplr, stplr)
+								task.wait()
+								repeat
+									task.wait()
+								until stplr.Character.Humanoid.Health >= stplr.Character.Humanoid.MaxHealth
+									or durability == false
+								duraturn(stplr, ftplr)
+							else
+								repeat
+									task.wait()
+								until ftplr.Character.Humanoid.Health >= ftplr.Character.Humanoid.MaxHealth
+									or durability == false
+	
+								duraturn(ftplr, stplr)
+							end
+							durainprogress = false
+							print("Durability turn completed.") -- Debugging print
+						else
+							print("Players are too far apart or no DuraBuy found.") -- Debugging print
+						end
+					else
+						print("Character not found or already in progress.") -- Debugging print
+					end
+				else
+					print("Local player is not in the turn list.") -- Debugging print
+				end
+			else
+				print("First turn or second turn player not set.") -- Debugging print
+			end
+		end
+	end)
 	main:Textbox("First Turn", function(txt)
 		ft = txt
 	end)
@@ -4985,15 +4990,12 @@ end)
 		if autobuyitem then
 			local function GetClosestItem()
 				local foodsnear = {}
-				print("Checking for nearby foods...")
 	
 				for i, v in pairs(ItemTable) do
 					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-					print("Checking item:", v.Name, "Distance:", distance, "Max Activation Distance:", v.ClickDetector.MaxActivationDistance)
 	
 					if distance <= v.ClickDetector.MaxActivationDistance then
 						table.insert(foodsnear, v)
-						print("Item within range:", v.Name)
 					end
 				end
 	
@@ -5007,15 +5009,12 @@ end)
 					print("Found", #foodstobuy, "items to buy.")
 					for i, v in pairs(foodstobuy) do
 						if not autobuyitem then
-							print("Auto buy stopped.")
 							return
 						end
-						print("Attempting to buy:", v.Name)
 						fireclickdetector(v.ClickDetector)
 						task.wait(0.15)
 					end
 				else
-					print("No items found within range.")
 				end
 			end
 		end
@@ -5692,20 +5691,20 @@ end)
 		JobBoard = Value
 	end)
 
+	getgenv().desiredAmount = 8 -- Default value
 
 
 
 	risky:Toggle("Auto Replenish Food", false, function(Value)
 		autoReplenishFood = Value
-
+	
 		if autoReplenishFood then
 			task.spawn(function()
-				local activeToggles = {}
-	
 				while autoReplenishFood do
 					task.wait()
 					if not CheckForFood() then
 						-- Store the state of active training toggles
+						local activeToggles = {}
 						for _, trainingToggle in pairs(trainingtoggles) do
 							if trainingToggle:GetState() then
 								table.insert(activeToggles, trainingToggle)
@@ -5715,7 +5714,6 @@ end)
 	
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
-	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
 						local foodLocations = {
 							Donut = Vector3.new(-1031, 54, -562),
@@ -5724,7 +5722,6 @@ end)
 							Hamburger = Vector3.new(-1050, 52, -572),
 							Omelette = Vector3.new(-1050, 52, -572)
 						}
-						local desiredAmount = 5 -- Default value, overridden by user slider
 	
 						for foodName, position in pairs(foodLocations) do
 							webhook("Auto Replenish", "Heading to buy " .. foodName)
@@ -5740,6 +5737,7 @@ end)
 									webhook("Auto Replenish", "Bought enough " .. foodName)
 									break
 								else
+									fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
 									task.wait(0.15)
 								end
 							end
@@ -5758,6 +5756,35 @@ end)
 					end
 				end
 			end)
+		end
+	end)
+	
+	-- Function to manage stamina during auto replenish
+	local function manageStamina()
+		local actionscript = getsenv(game:GetService("Players").LocalPlayer.Backpack.LocalS)
+		local StamPercent = (
+			game.Players.LocalPlayer.Character.CurrentStamina.Value
+			/ game.Players.LocalPlayer.Character.MaxStamina.Value
+		) * 100
+	
+		if StamPercent < ministam then
+			actionscript.stopSprint()
+			repeat
+				task.wait()
+				StamPercent = (
+					game.Players.LocalPlayer.Character.CurrentStamina.Value
+					/ game.Players.LocalPlayer.Character.MaxStamina.Value
+				) * 100
+			until StamPercent >= regentoamt
+			actionscript.runPrompt()
+		end
+	end
+	
+	-- Integrate stamina management into the auto replenish loop
+	task.spawn(function()
+		while autoReplenishFood do
+			manageStamina()
+			task.wait(0.1)
 		end
 	end)
 	risky:Slider("Desired Food Quantity", {min = 1, max = 12, def = 5}, function(Value)
