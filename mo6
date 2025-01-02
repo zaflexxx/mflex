@@ -3715,7 +3715,6 @@ local function MO(name)
 			end
 		end
 	end
-
 	local function debuffCheck()
 		if game.Players.LocalPlayer.Character.Ragdolled.Value == true then
 			return false
