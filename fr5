@@ -1643,9 +1643,9 @@ local function MO(name)
 	local ping = "@everyone"
 	local statcheck = false
 	local RhythmToggle = false
-	local RunToPercent = 50
-	local PunchStartPercent = 55
-	local PunchEndPercent = 20
+	local RunToPercent = 22
+	local PunchStartPercent = 24
+	local PunchEndPercent = 7
 	local Roadwork = false
 	local RWCanSprint = false
 	local CPRangeTilNext = 7
@@ -4632,7 +4632,7 @@ local function MO(name)
 		end
 	end)
 
-	notify:Toggle("Notify & Stop when No Food", false, function(Value)
+	notify:Toggle("Notify & Stop when No Food", true, function(Value)
 		NoFoodNotify = Value
 	end)
 
@@ -5206,7 +5206,7 @@ local function MO(name)
 		staminabelowpercent = Value
 	end)
 
-	misc:Toggle("Auto Disable Macros", false, function(Value)
+	misc:Toggle("Auto Disable Macros", true, function(Value)
 		AutoStop = Value
 	end)
 
@@ -5695,7 +5695,7 @@ local function MO(name)
 
 
 
-	risky:Toggle("Auto Replenish Food", false, function(Value)
+	risky:Toggle("Auto Replenish Food", true, function(Value)
 		autoReplenishFood = Value
 	
 		if autoReplenishFood then
@@ -5737,7 +5737,6 @@ local function MO(name)
 									webhook("Auto Replenish", "Bought enough " .. foodName)
 									break
 								else
-									fireclickdetector(workspace:FindFirstChild(foodName).ClickDetector)
 									task.wait(0.15)
 								end
 							end
