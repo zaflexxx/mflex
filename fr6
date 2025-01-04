@@ -5715,13 +5715,13 @@ local function MO(name)
 		JobBoard = Value
 	end)
 
-	getgenv().desiredAmount = 8 -- Default value
+	getgenv().desiredAmount = 12 -- Default value
 
 
-	risky:Button("Destroy New Shop Objects That Get in Way of Food", function()
+	risky:Button("Destroy New Shop Objects That Get in Way of Food auto food works best in muay thai", function()
 		-- Get the New shop folder
 		local newShop = workspace.Map:FindFirstChild("New shop")
-	
+		
 		-- Check if the folder exists
 		if newShop then
 			-- Loop through all the children of New shop
@@ -5733,10 +5733,16 @@ local function MO(name)
 				end
 			end
 		else
-			warn("New shop not found!")
+		end
+		
+		-- Destroy the specific child in workspace at index 72
+		local child = workspace:GetChildren()[72]
+		if child then
+			child:Destroy()
+		else
 		end
 	end)
-
+	
 	risky:Toggle("Auto Replenish Food (working)", true, function(Value)
 		autoReplenishFood = Value
 	
