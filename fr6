@@ -5029,9 +5029,7 @@ local function MO(name)
 				end
 				return foodsnear
 			end
-	
-			print("Auto-buy is active") -- Print to indicate script is running
-	
+		
 			task.spawn(function()
 				while autobuyitem do
 					local foodstobuy = GetClosestItem()
@@ -5738,7 +5736,7 @@ local function MO(name)
 			warn("New shop not found!")
 		end
 	end)
-	
+
 	risky:Toggle("Auto Replenish Food (working)", true, function(Value)
 		autoReplenishFood = Value
 	
