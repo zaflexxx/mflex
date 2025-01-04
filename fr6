@@ -4632,11 +4632,11 @@ local function MO(name)
 		end
 	end)
 
-	notify:Toggle("Notify & Stop when No Food", true, function(Value)
+	notify:Toggle("Notify & Stop when No Food", false, function(Value)
 		NoFoodNotify = Value
 	end)
 
-	notify:Toggle("Log when No Food", false, function(Value)
+	notify:Toggle("Log when No Food", true, function(Value)
 		LogOnNoFood = Value
 	end)
 
@@ -4984,42 +4984,68 @@ local function MO(name)
 		TPS:TeleportToPlaceInstance(_place, Server.id, game.Players.LocalPlayer)
 	end)
 
-	misc:Toggle("Auto Buy Foods Nearby", false, function(Value)
+	misc:Toggle("Auto Buy Foods Nearby (WORKING)", false, function(Value)
 		autobuyitem = Value
 	
 		if autobuyitem then
+			local MOfoods = {
+				"Donut",
+				"Coffee",
+				"Bagel",
+				"EZ Taco",
+				"Omelette",
+				"Hotdog",
+				"Pancakes",
+				"Tofu Beef Soup",
+				"Pie",
+				"Tokito Sake",
+				"Hamburger",
+				"Chicken Fries",
+				"Ramen",
+			}
+	
+			local function GetItemTable()
+				local tbl = {}
+				for i, v in pairs(workspace.Map:GetChildren()) do
+					if v:FindFirstChild("Shopnoid") then
+						local foodname = v.Name:split(":")[1]
+						if table.find(MOfoods, foodname) then
+							table.insert(tbl, v)
+						end
+					end
+				end
+				return tbl
+			end
+	
+			local ItemTable = GetItemTable()
+	
 			local function GetClosestItem()
 				local foodsnear = {}
-	
 				for i, v in pairs(ItemTable) do
 					local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Head.Position).Magnitude
-	
 					if distance <= v.ClickDetector.MaxActivationDistance then
 						table.insert(foodsnear, v)
 					end
 				end
-	
 				return foodsnear
 			end
 	
-			while autobuyitem and task.wait() do
-				local foodstobuy = GetClosestItem()
+			print("Auto-buy is active") -- Print to indicate script is running
 	
-				if #foodstobuy > 0 then
-					print("Found", #foodstobuy, "items to buy.")
-					for i, v in pairs(foodstobuy) do
-						if not autobuyitem then
-							return
+			task.spawn(function()
+				while autobuyitem do
+					local foodstobuy = GetClosestItem()
+					if #foodstobuy > 0 then
+						for i, v in pairs(foodstobuy) do
+							fireclickdetector(v.ClickDetector)
+							task.wait(0.15)
 						end
-						fireclickdetector(v.ClickDetector)
-						task.wait(0.15)
 					end
-				else
+					task.wait() -- Prevent potential infinite loop from freezing
 				end
-			end
+			end)
 		end
 	end)
-
 	misc:Toggle("Auto Panic", false, function(Value)
 		autopanic = Value
 
@@ -5694,8 +5720,26 @@ local function MO(name)
 	getgenv().desiredAmount = 8 -- Default value
 
 
-
-	risky:Toggle("Auto Replenish Food", true, function(Value)
+	risky:Button("Destroy New Shop Objects That Get in Way of Food", function()
+		-- Get the New shop folder
+		local newShop = workspace.Map:FindFirstChild("New shop")
+	
+		-- Check if the folder exists
+		if newShop then
+			-- Loop through all the children of New shop
+			for _, item in pairs(newShop:GetChildren()) do
+				-- Check if the item is a chair
+				if item.Name == "chair" then
+					-- Destroy the chair
+					item:Destroy()
+				end
+			end
+		else
+			warn("New shop not found!")
+		end
+	end)
+	
+	risky:Toggle("Auto Replenish Food (working)", true, function(Value)
 		autoReplenishFood = Value
 	
 		if autoReplenishFood then
@@ -5715,12 +5759,14 @@ local function MO(name)
 						webhook("Auto Replenish", "No food left. Disabling macros and going to buy food.")
 	
 						local originalPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+						local originalOrientation = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame - game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame.Position
+
 						local foodLocations = {
-							Donut = Vector3.new(-1031, 54, -562),
-							Pancakes = Vector3.new(-1032, 53, -570),
-							Pie = Vector3.new(-1037, 53, -571),
-							Hamburger = Vector3.new(-1050, 52, -572),
-							Omelette = Vector3.new(-1050, 52, -572)
+							Donut = Vector3.new(-1028, 48, -562),
+							Pancakes = Vector3.new(-1029, 48, -571),
+							Pie = Vector3.new(-1037, 48, -576),
+							Hamburger = Vector3.new(-1050, 48, -575),
+							Omelette = Vector3.new(-1050, 48, -575)
 						}
 	
 						for foodName, position in pairs(foodLocations) do
@@ -5745,6 +5791,7 @@ local function MO(name)
 	
 						webhook("Auto Replenish", "Returning to original position.")
 						WalkTo(originalPosition.Position)
+						game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(originalPosition) * originalOrientation
 						task.wait(0.5)
 						webhook("Auto Replenish", "Resuming training.")
 	
@@ -5759,33 +5806,36 @@ local function MO(name)
 	end)
 	
 	-- Function to manage stamina during auto replenish
-	local function manageStamina()
-		local actionscript = getsenv(game:GetService("Players").LocalPlayer.Backpack.LocalS)
-		local StamPercent = (
-			game.Players.LocalPlayer.Character.CurrentStamina.Value
-			/ game.Players.LocalPlayer.Character.MaxStamina.Value
-		) * 100
+-- Function to manage stamina during auto replenish
+local function manageStamina()
+    local actionscript = getsenv(game:GetService("Players").LocalPlayer.Backpack.LocalS)
+    local StamPercent = (
+        game.Players.LocalPlayer.Character.CurrentStamina.Value
+        / game.Players.LocalPlayer.Character.MaxStamina.Value
+    ) * 100
+
+    if StamPercent < ministam then
+        actionscript.stopSprint()
+        repeat
+            task.wait()
+            StamPercent = (
+                game.Players.LocalPlayer.Character.CurrentStamina.Value
+                / game.Players.LocalPlayer.Character.MaxStamina.Value
+            ) * 100
+        until StamPercent >= regentoamt
+        actionscript.runPrompt()
+    end
+end
+
+-- Integrate stamina management into the auto replenish loop
+task.spawn(function()
+    while autoReplenishFood do
+        manageStamina()
+        task.wait(0.1)
+    end
+end)
 	
-		if StamPercent < ministam then
-			actionscript.stopSprint()
-			repeat
-				task.wait()
-				StamPercent = (
-					game.Players.LocalPlayer.Character.CurrentStamina.Value
-					/ game.Players.LocalPlayer.Character.MaxStamina.Value
-				) * 100
-			until StamPercent >= regentoamt
-			actionscript.runPrompt()
-		end
-	end
 	
-	-- Integrate stamina management into the auto replenish loop
-	task.spawn(function()
-		while autoReplenishFood do
-			manageStamina()
-			task.wait(0.1)
-		end
-	end)
 	risky:Slider("Desired Food Quantity", {min = 1, max = 12, def = 5}, function(Value)
 		desiredAmount = Value
 	end)
